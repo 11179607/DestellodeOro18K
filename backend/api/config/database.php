@@ -1,9 +1,9 @@
 <?php
 // Configuración de la base de datos
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'destello_oro_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_HOST', 'sql311.infinityfree.com');
+define('DB_NAME', 'if0_40727550_destellodeoro');
+define('DB_USER', 'if0_40727550');
+define('DB_PASS', 'R384n6XMKCK4');
 define('DB_CHARSET', 'utf8mb4');
 
 // Configuración de la aplicación
