@@ -1,9 +1,9 @@
 <?php
 // Configuración de la base de datos
 define('DB_HOST', 'sql311.infinityfree.com');
-define('DB_NAME', 'if0_40727550_destellodeoro');
+define('DB_NAME', 'if0_40727550_destello_oro');
 define('DB_USER', 'if0_40727550');
-define('DB_PASS', 'R384n6XMKCK4');
+define('DB_PASS', 'Your vPanel Password');
 define('DB_CHARSET', 'utf8mb4');
 
 // Configuración de la aplicación
