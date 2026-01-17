@@ -1,0 +1,307 @@
+name: Deploy Destello de Oro 18K
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # Permite ejecución manual
+
+env:
+  PHP_VERSION: '8.2'
+  NODE_VERSION: '18'
+
+jobs:
+  # Job de pruebas y validación
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+      
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ env.PHP_VERSION }}
+        extensions: mbstring, pdo, pdo_mysql, json, session, gd
+        coverage: none
+        
+    - name: Validar sintaxis PHP
+      run: |
+        echo "Validando sintaxis PHP..."
+        find . -name "*.php" -type f -exec php -l {} \;
+        
+    - name: Verificar archivos requeridos
+      run: |
+        echo "Verificando archivos requeridos..."
+        required_files=(
+          "frontend/index.php"
+          "backend/api/config/database.php"
+          "backend/api/auth/login.php"
+          "backend/api/products/get_all.php"
+          "backend/database/schema.sql"
+          "includes/functions.php"
+        )
+        
+        for file in "${required_files[@]}"; do
+          if [ ! -f "$file" ]; then
+            echo "❌ Archivo requerido faltante: $file"
+            exit 1
+          else
+            echo "✅ $file"
+          fi
+        done
+        
+    - name: Validar SQL
+      run: |
+        echo "Validando sintaxis SQL..."
+        if [ -f "backend/database/schema.sql" ]; then
+          # Verificar que el archivo SQL tenga las tablas mínimas
+          grep -q "CREATE TABLE" backend/database/schema.sql || echo "⚠️ No se encontraron CREATE TABLE en schema.sql"
+        fi
+        
+    - name: Verificar permisos
+      run: |
+        echo "Verificando permisos..."
+        # Archivos que deberían ser ejecutables
+        chmod +x .github/scripts/*.sh 2>/dev/null || true
+        
+  # Job de construcción
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+      
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ env.PHP_VERSION }}
+        extensions: mbstring, pdo, pdo_mysql, json, session
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Instalar dependencias (si hay package.json)
+      run: |
+        if [ -f "package.json" ]; then
+          npm ci
+        else
+          echo "No se encontró package.json, saltando instalación de Node.js"
+        fi
+        
+    - name: Minificar y optimizar (opcional)
+      run: |
+        echo "Optimizando archivos..."
+        # Aquí puedes agregar comandos para minificar CSS/JS si es necesario
+        # Por ahora solo creamos una versión comprimida
+        tar -czf destello-oro-build.tar.gz \
+          --exclude='.git' \
+          --exclude='.github' \
+          --exclude='node_modules' \
+          --exclude='*.log' \
+          .
+          
+    - name: Crear artefacto de construcción
+      uses: actions/upload-artifact@v4
+      with:
+        name: destello-oro-build
+        path: |
+          destello-oro-build.tar.gz
+          frontend/
+          backend/
+          includes/
+        retention-days: 7
+        
+  # Job de despliegue en servidor (usando SSH)
+  deploy-production:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: Descargar artefacto de construcción
+      uses: actions/download-artifact@v4
+      with:
+        name: destello-oro-build
+        
+    - name: Configurar SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        # Añadir el host del servidor a known_hosts
+        ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Desplegar en servidor
+      run: |
+        # Crear script de despliegue temporal
+        cat > deploy.sh << 'EOF'
+        #!/bin/bash
+        set -e
+        
+        echo "🔧 Iniciando despliegue..."
+        
+        SERVER_HOST="${{ secrets.SERVER_HOST }}"
+        SERVER_USER="${{ secrets.SERVER_USER }}"
+        DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+        BACKUP_PATH="${{ secrets.BACKUP_PATH }}"
+        
+        # Crear timestamp para backup
+        TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+        
+        # Conectar al servidor y ejecutar despliegue
+        ssh $SERVER_USER@$SERVER_HOST "
+          set -e
+          echo '📁 Conectado al servidor'
+          
+          # Crear directorios si no existen
+          mkdir -p $DEPLOY_PATH
+          mkdir -p $BACKUP_PATH
+          
+          # Hacer backup de la versión actual
+          if [ -d \"$DEPLOY_PATH\" ]; then
+            echo '💾 Creando backup...'
+            tar -czf \"$BACKUP_PATH/destello-oro-backup-$TIMESTAMP.tar.gz\" -C \"$DEPLOY_PATH\" .
+          fi
+          
+          # Limpiar directorio de despliegue
+          echo '🧹 Limpiando directorio...'
+          rm -rf \"$DEPLOY_PATH\"/*
+          
+          echo '✅ Directorio listo para nuevo despliegue'
+        "
+        
+        # Transferir archivos
+        echo '📤 Subiendo archivos...'
+        scp -r * $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
+        
+        # Ejecutar comandos post-despliegue en el servidor
+        ssh $SERVER_USER@$SERVER_HOST "
+          set -e
+          echo '⚙️ Ejecutando comandos post-despliegue...'
+          
+          cd $DEPLOY_PATH
+          
+          # Configurar permisos
+          echo '🔐 Configurando permisos...'
+          find . -type f -name '*.php' -exec chmod 644 {} \;
+          find . -type d -exec chmod 755 {} \;
+          chmod 755 frontend/
+          chmod 755 backend/
+          
+          # Configurar .htaccess si no existe
+          if [ ! -f \"frontend/.htaccess\" ]; then
+            echo '📝 Creando .htaccess...'
+            cat > frontend/.htaccess << 'HTACCESS'
+            # Destello de Oro 18K - Configuración Apache
+            RewriteEngine On
+            
+            # Redirigir todo a index.php
+            RewriteCond %{REQUEST_FILENAME} !-f
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteRule ^(.*)$ index.php [QSA,L]
+            
+            # Proteger archivos sensibles
+            <FilesMatch "\.(sql|log|ini|env)$">
+              Order allow,deny
+              Deny from all
+            </FilesMatch>
+            
+            # Cabeceras de seguridad
+            Header set X-Content-Type-Options "nosniff"
+            Header set X-Frame-Options "SAMEORIGIN"
+            Header set X-XSS-Protection "1; mode=block"
+            HTACCESS
+          fi
+          
+          # Importar base de datos si es necesario
+          if [ -f \"backend/database/schema.sql\" ] && [ \"${{ secrets.AUTO_IMPORT_DB }}\" = \"true\" ]; then
+            echo '🗄️ Importando base de datos...'
+            mysql -h \"${{ secrets.DB_HOST }}\" -u \"${{ secrets.DB_USER }}\" -p\"${{ secrets.DB_PASSWORD }}\" \"${{ secrets.DB_NAME }}\" < backend/database/schema.sql || echo '⚠️ Error al importar base de datos'
+          fi
+          
+          # Actualizar configuración de base de datos
+          echo '⚙️ Actualizando configuración...'
+          sed -i \"s/localhost/${{ secrets.DB_HOST }}/g\" backend/api/config/database.php
+          sed -i \"s/root/${{ secrets.DB_USER }}/g\" backend/api/config/database.php
+          sed -i \"s/''/'${{ secrets.DB_PASSWORD }}'/g\" backend/api/config/database.php
+          sed -i \"s/destello_oro_db/${{ secrets.DB_NAME }}/g\" backend/api/config/database.php
+          
+          # Limpiar cache si existe
+          if [ -d \"backend/cache\" ]; then
+            rm -rf backend/cache/*
+          fi
+          
+          echo '🎉 ¡Despliegue completado!'
+          
+          # Notificación (opcional)
+          if [ -n \"${{ secrets.WEBHOOK_URL }}\" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{\"text\":\"✅ Destello de Oro 18K desplegado exitosamente\\n• Commit: ${{ github.sha }}\\n• Branch: ${{ github.ref }}\\n• Servidor: $SERVER_HOST\"}' \
+              ${{ secrets.WEBHOOK_URL }} || true
+          fi
+        "
+        
+        echo "🚀 Despliegue completado exitosamente"
+        EOF
+        
+        chmod +x deploy.sh
+        ./deploy.sh
+        
+    - name: Limpiar SSH keys
+      if: always()
+      run: |
+        rm -f ~/.ssh/id_rsa
+        rm -f ~/.ssh/known_hosts
+        
+  # Despliegue en staging/desarrollo
+  deploy-staging:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+    
+    steps:
+    - name: Descargar artefacto de construcción
+      uses: actions/download-artifact@v4
+      with:
+        name: destello-oro-build
+        
+    - name: Desplegar en staging
+      run: |
+        echo "🚀 Despliegue en staging"
+        echo "Branch: ${{ github.ref }}"
+        echo "Commit: ${{ github.sha }}"
+        
+        # Aquí podrías agregar lógica para staging
+        # Por ahora solo mostramos información
+        
+  # Notificaciones
+  notify:
+    needs: [test, build, deploy-production]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Notificar estado del despliegue
+      run: |
+        echo "📊 Resumen del despliegue:"
+        echo "Estado del test: ${{ needs.test.result }}"
+        echo "Estado del build: ${{ needs.build.result }}"
+        echo "Estado del deploy: ${{ needs.deploy-production.result }}"
+        
+        # Aquí puedes agregar notificaciones a Slack, Discord, etc.
+        if [ "${{ needs.deploy-production.result }}" = "success" ]; then
+          echo "✅ Despliegue exitoso"
+        elif [ "${{ needs.deploy-production.result }}" = "failure" ]; then
+          echo "❌ Despliegue fallido"
+          exit 1
+        else
+          echo "⚠️ Estado desconocido"
+        fi
