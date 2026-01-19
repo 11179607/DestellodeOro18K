@@ -1,0 +1,4247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Destello de Oro 18K | Sistema de Gestión</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- QR Code Generator Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
+    <!-- Añadir jsPDF y html2canvas para generar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Icono para la ventana del navegador -->
+    <link rel="icon" type="image/x-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+    <style>
+        :root {
+            --gold-primary: #D4AF37;
+            --gold-secondary: #FFD700;
+            --gold-light: #FFF8DC;
+            --gold-dark: #B8860B;
+            --white: #FFFFFF;
+            --off-white: #F9F9F9;
+            --light-gray: #F5F5F5;
+            --medium-gray: #E8E8E8;
+            --dark-gray: #333333;
+            --text-dark: #222222;
+            --success: #2E8B57;
+            --warning: #FFA500;
+            --danger: #DC143C;
+            --info: #4169E1;
+            --shadow-light: 0 5px 15px rgba(0, 0, 0, 0.05);
+            --shadow-medium: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --shadow-heavy: 0 15px 35px rgba(0, 0, 0, 0.15);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 15px;
+            --radius-xl: 20px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.95)), 
+                        url('https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Elementos decorativos de joyería */
+        .jewelry-decoration {
+            position: fixed;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .ring-decoration {
+            width: 80px;
+            height: 80px;
+            border: 2px solid var(--gold-primary);
+            border-radius: 50%;
+            top: 15%;
+            left: 3%;
+            animation: float 25s infinite linear;
+        }
+
+        .chain-decoration {
+            width: 120px;
+            height: 60px;
+            border: 2px solid var(--gold-secondary);
+            border-radius: 50% / 20%;
+            top: 70%;
+            right: 3%;
+            animation: float 30s infinite linear reverse;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg) scale(1); }
+            50% { transform: translateY(-20px) rotate(180deg) scale(1.05); }
+            100% { transform: translateY(0) rotate(360deg) scale(1); }
+        }
+
+        /* Pantalla de Login */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), 
+                        url('https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: var(--shadow-heavy);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            position: relative;
+            z-index: 1;
+            transition: var(--transition);
+        }
+
+        @media (max-width: 480px) {
+            .login-box {
+                padding: 1.5rem;
+            }
+        }
+
+        .login-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-header i {
+            font-size: 2.5rem;
+            color: var(--gold-primary);
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .login-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--gold-dark);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 300;
+        }
+
+        /* NUEVO: Estilos para formularios de usuario */
+        .user-info-form {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .user-info-form.active {
+            display: block;
+        }
+
+        .role-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 480px) {
+            .role-selector {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .role-btn {
+            padding: 12px;
+            border: 2px solid var(--medium-gray);
+            background: var(--white);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .role-btn i {
+            font-size: 1.2rem;
+            color: var(--gold-primary);
+        }
+
+        .role-btn:hover {
+            border-color: var(--gold-primary);
+            transform: translateY(-2px);
+        }
+
+        .role-btn.active {
+            border-color: var(--gold-primary);
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
+            color: var(--gold-dark);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--medium-gray);
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            transition: var(--transition);
+            background: var(--white);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* NUEVO: Estilos para cambio de contraseña */
+        .password-change-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .password-change-box {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-heavy);
+            border: 2px solid var(--gold-primary);
+            position: relative;
+            margin: auto;
+        }
+
+        .password-change-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .password-change-header i {
+            font-size: 2rem;
+            color: var(--gold-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .password-change-header h2 {
+            font-size: 1.5rem;
+            color: var(--gold-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .password-change-header p {
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .close-password-change {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--danger);
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* Aplicación principal */
+        #appScreen {
+            display: none;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .main-header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            color: var(--white);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-medium);
+            border-bottom: 2px solid var(--gold-primary);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 0.75rem;
+                text-align: center;
+            }
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-icon {
+            font-size: 1.8rem;
+            color: var(--gold-primary);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .brand-text h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 480px) {
+            .brand-text h1 {
+                font-size: 1.3rem;
+            }
+        }
+
+        .brand-text span {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            font-weight: 300;
+        }
+
+        .user-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .user-controls {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+
+        .user-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 50px;
+            font-weight: 500;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .user-badge.admin {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%);
+        }
+
+        .user-badge.worker {
+            background: linear-gradient(135deg, rgba(65, 105, 225, 0.2) 0%, rgba(30, 144, 255, 0.1) 100%);
+        }
+
+        .logout-btn {
+            background: rgba(220, 20, 60, 0.1);
+            border: 1px solid rgba(220, 20, 60, 0.3);
+            color: var(--danger);
+            padding: 8px 15px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            background: rgba(220, 20, 60, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Navegación */
+        .main-nav {
+            background: var(--white);
+            padding: 0.75rem 0;
+            position: sticky;
+            top: 65px;
+            z-index: 999;
+            box-shadow: var(--shadow-light);
+            border-bottom: 1px solid var(--medium-gray);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            overflow-x: auto;
+        }
+
+        .nav-btn {
+            background: var(--white);
+            border: 2px solid var(--medium-gray);
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-dark);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 150px;
+            justify-content: center;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .nav-btn {
+                min-width: 120px;
+                padding: 8px 15px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-btn {
+                min-width: 100px;
+                padding: 6px 12px;
+                font-size: 0.75rem;
+            }
+            
+            .nav-btn i {
+                font-size: 0.9rem;
+            }
+        }
+
+        .nav-btn:hover {
+            border-color: var(--gold-primary);
+            color: var(--gold-dark);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            border-color: var(--gold-primary);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        /* Contenido principal */
+        .main-content {
+            max-width: 1400px;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+        }
+
+        .section-container {
+            display: none;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-container.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--gold-primary);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            font-size: 1.5rem;
+            color: var(--gold-primary);
+        }
+
+        @media (max-width: 480px) {
+            .section-title i {
+                font-size: 1.3rem;
+            }
+        }
+
+        .section-title h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--gold-dark);
+        }
+
+        @media (max-width: 768px) {
+            .section-title h2 {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .section-title h2 {
+                font-size: 1.3rem;
+            }
+        }
+
+        /* Tarjetas y formularios */
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-light);
+            border: 1px solid var(--medium-gray);
+            transition: var(--transition);
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 1rem;
+            }
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-medium);
+            transform: translateY(-3px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .card-header h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--gold-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 480px) {
+            .card-header h3 {
+                font-size: 1.1rem;
+            }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Tablas */
+        .table-wrapper {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-light);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--medium-gray);
+            overflow-x: auto;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, var(--gold-light) 0%, rgba(212, 175, 55, 0.1) 100%);
+            padding: 1rem;
+            border-bottom: 1px solid var(--medium-gray);
+        }
+
+        .table-header h3 {
+            color: var(--gold-dark);
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 600px;
+        }
+
+        .data-table thead {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            color: var(--white);
+        }
+
+        .data-table th {
+            padding: 0.8rem 1rem;
+            text-align: left;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+        }
+
+        .data-table th:last-child {
+            border-right: none;
+        }
+
+        .data-table tbody tr {
+            border-bottom: 1px solid var(--medium-gray);
+            transition: var(--transition);
+        }
+
+        .data-table tbody tr:hover {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(255, 215, 0, 0.02) 100%);
+        }
+
+        .data-table td {
+            padding: 0.8rem 1rem;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 480px) {
+            .data-table th,
+            .data-table td {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Badges */
+        .badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-admin {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(255, 215, 0, 0.1) 100%);
+            color: var(--gold-dark);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .badge-worker {
+            background: linear-gradient(135deg, rgba(65, 105, 225, 0.15) 0%, rgba(30, 144, 255, 0.1) 100%);
+            color: var(--info);
+            border: 1px solid rgba(65, 105, 225, 0.3);
+        }
+
+        .badge-success {
+            background: linear-gradient(135deg, rgba(46, 139, 87, 0.15) 0%, rgba(50, 205, 50, 0.1) 100%);
+            color: var(--success);
+            border: 1px solid rgba(46, 139, 87, 0.3);
+        }
+
+        .badge-warning {
+            background: linear-gradient(135deg, rgba(255, 165, 0, 0.15) 0%, rgba(255, 215, 0, 0.1) 100%);
+            color: var(--warning);
+            border: 1px solid rgba(255, 165, 0, 0.3);
+        }
+
+        .badge-danger {
+            background: linear-gradient(135deg, rgba(220, 20, 60, 0.15) 0%, rgba(255, 99, 71, 0.1) 100%);
+            color: var(--danger);
+            border: 1px solid rgba(220, 20, 60, 0.3);
+        }
+
+        /* Botones */
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #32CD32 100%);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(46, 139, 87, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #FFD700 100%);
+            color: var(--text-dark);
+            box-shadow: 0 4px 15px rgba(255, 165, 0, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #FF6347 100%);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(220, 20, 60, 0.3);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, var(--info) 0%, #1E90FF 100%);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(65, 105, 225, 0.3);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        /* NUEVO: Estilos mejorados para la factura */
+        .invoice-container.enhanced-invoice {
+            background: white;
+            border: 2px solid #333;
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            padding: 1.5rem;
+            width: 95%;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .invoice-container.enhanced-invoice {
+                padding: 1rem;
+            }
+        }
+
+        .enhanced-invoice .invoice-header {
+            text-align: left;
+            border-bottom: 2px solid #D4AF37;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .enhanced-invoice .invoice-logo {
+            font-size: 2rem;
+            color: #D4AF37;
+            margin-bottom: 8px;
+        }
+        
+        .enhanced-invoice .company-info {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            gap: 1rem;
+        }
+        
+        .enhanced-invoice .company-details {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .enhanced-invoice .invoice-details {
+            flex: 1;
+            text-align: right;
+            min-width: 250px;
+        }
+        
+        .enhanced-invoice .invoice-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .enhanced-invoice .client-info {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .enhanced-invoice .client-info h3 {
+            color: #D4AF37;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+        
+        .enhanced-invoice .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .enhanced-invoice .product-table th {
+            background: #D4AF37;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .enhanced-invoice .product-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.85rem;
+        }
+        
+        .enhanced-invoice .warranty-section {
+            background: #fff8e1;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 3px solid #D4AF37;
+            font-size: 0.85rem;
+        }
+        
+        .enhanced-invoice .warranty-section h4 {
+            color: #D4AF37;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        
+        .enhanced-invoice .total-section {
+            text-align: right;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #333;
+        }
+        
+        .enhanced-invoice .total-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #D4AF37;
+        }
+        
+        .enhanced-invoice .contact-info {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .enhanced-invoice .social-qr-section {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+        
+        .enhanced-invoice .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .enhanced-invoice .social-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #333;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            background: white;
+            border: 1px solid #ddd;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+        }
+        
+        .enhanced-invoice .social-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .enhanced-invoice .social-link.instagram { color: #E4405F; }
+        .enhanced-invoice .social-link.whatsapp { color: #25D366; }
+        .enhanced-invoice .social-link.website { color: #D4AF37; }
+        
+        /* QR CODE SECTION - NUEVO Y FUNCIONAL */
+        .enhanced-invoice .qr-code-section {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            border: 2px solid #D4AF37;
+        }
+        
+        .enhanced-invoice .qr-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #D4AF37;
+            margin-bottom: 15px;
+        }
+        
+        .enhanced-invoice .qr-container {
+            display: inline-block;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            margin: 15px auto;
+            border: 1px solid #ddd;
+        }
+        
+        .enhanced-invoice .qr-code-canvas {
+            width: 180px !important;
+            height: 180px !important;
+            border: 2px solid #333;
+            padding: 5px;
+            background: white;
+        }
+        
+        .enhanced-invoice .qr-description {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 10px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .payment-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin: 2px;
+            display: inline-block;
+        }
+        
+        .payment-transfer { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
+        .payment-cash { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .payment-bold { background: #fff3e0; color: #ef6c00; border: 1px solid #ffe0b2; }
+        .payment-addi { background: #f3e5f5; color: #7b1fa2; border: 1px solid #e1bee7; }
+        .payment-sistecredito { background: #e8eaf6; color: #3949ab; border: 1px solid #c5cae9; }
+        .payment-cod { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+
+        /* Factura */
+        .invoice-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .invoice-container {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            max-width: 900px;
+            margin: 0 auto;
+            box-shadow: var(--shadow-heavy);
+            position: relative;
+            border: 2px solid var(--gold-primary);
+        }
+
+        /* Historial */
+        .history-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .history-select {
+            min-width: 150px;
+            padding: 10px 15px;
+            border: 2px solid var(--medium-gray);
+            border-radius: var(--radius-md);
+            background: var(--white);
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .history-select:focus {
+            border-color: var(--gold-primary);
+            outline: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--white) 0%, var(--off-white) 100%);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid var(--medium-gray);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            color: var(--gold-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--gold-dark);
+            margin: 0.5rem 0;
+            font-family: 'Playfair Display', serif;
+        }
+
+        @media (max-width: 480px) {
+            .stat-value {
+                font-size: 1.5rem;
+            }
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Footer */
+        .main-footer {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            color: var(--white);
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+            border-top: 2px solid var(--gold-primary);
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-size: 2rem;
+            color: var(--gold-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-content h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--gold-primary);
+        }
+
+        @media (max-width: 480px) {
+            .footer-content h3 {
+                font-size: 1.3rem;
+            }
+        }
+
+        .footer-content p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .copyright {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        /* Diálogos personalizados */
+        .custom-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .dialog-content {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: var(--shadow-heavy);
+            border: 2px solid var(--gold-primary);
+            text-align: center;
+            position: relative;
+            animation: dialogAppear 0.3s ease-out;
+        }
+
+        @keyframes dialogAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .dialog-icon {
+            font-size: 3rem;
+            color: var(--gold-primary);
+            margin-bottom: 1rem;
+        }
+
+        .dialog-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--gold-dark);
+            margin-bottom: 0.75rem;
+        }
+
+        .dialog-message {
+            color: #666;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .dialog-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Responsive adicional para dispositivos muy pequeños */
+        @media (max-height: 700px) {
+            .login-box {
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            
+            .password-change-box {
+                max-height: 85vh;
+            }
+        }
+
+        /* Mejoras para iOS */
+        @supports (-webkit-touch-callout: none) {
+            .login-container,
+            .password-change-container {
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            input, select, textarea, button {
+                font-size: 16px !important; /* Evita zoom automático en iOS */
+            }
+        }
+
+        /* Mejoras para Android */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            select,
+            textarea,
+            input {
+                font-size: 16px !important;
+            }
+        }
+
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Elementos decorativos -->
+    <div class="jewelry-decoration ring-decoration"></div>
+    <div class="jewelry-decoration chain-decoration"></div>
+    
+    <!-- Diálogo personalizado -->
+    <div id="customDialog" class="custom-dialog">
+        <div class="dialog-content">
+            <div id="dialogIcon" class="dialog-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 id="dialogTitle" class="dialog-title">Éxito</h2>
+            <p id="dialogMessage" class="dialog-message">Operación completada correctamente.</p>
+            <div class="dialog-buttons">
+                <button id="dialogConfirm" class="btn btn-primary">Aceptar</button>
+                <button id="dialogCancel" class="btn btn-danger" style="display: none;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NUEVO: Modal para cambio de contraseña -->
+    <div id="passwordChangeModal" class="password-change-container">
+        <div class="password-change-box">
+            <button class="close-password-change" id="closePasswordChange">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="password-change-header">
+                <i class="fas fa-key"></i>
+                <h2>Cambiar Contraseña</h2>
+                <p>Solo el administrador puede cambiar contraseñas</p>
+            </div>
+            
+            <form id="passwordChangeForm">
+                <div class="form-group">
+                    <label for="adminUsername">Usuario Administrador *</label>
+                    <input type="text" id="adminUsername" class="form-control" placeholder="admin" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="adminPassword">Contraseña Administrador *</label>
+                    <input type="password" id="adminPassword" class="form-control" placeholder="********" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="userToChange">Usuario a modificar *</label>
+                    <select id="userToChange" class="form-control" required>
+                        <option value="">Seleccione un usuario</option>
+                        <!-- Se llenará dinámicamente -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="newPassword">Nueva Contraseña *</label>
+                    <input type="password" id="newPassword" class="form-control" placeholder="Nueva contraseña" required minlength="6">
+                </div>
+                
+                .form-group">
+                    <label for="confirmPassword">Confirmar Contraseña *</label>
+                    <input type="password" id="confirmPassword" class="form-control" placeholder="Confirmar nueva contraseña" required>
+                </div>
+                
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Cambiar Contraseña
+                    </button>
+                    <button type="button" class="btn btn-danger" id="cancelPasswordChange">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Pantalla de Login -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <i class="fas fa-gem"></i>
+                <h1>Destello de Oro 18K</h1>
+                <p>Sistema de Gestión de Inventario y Ventas</p>
+            </div>
+            
+            <!-- Paso 1: Selección de rol -->
+            <div id="roleSelection">
+                <h3 style="text-align: center; margin-bottom: 1rem; color: var(--gold-dark); font-size: 1.1rem;">
+                    <i class="fas fa-user-tag"></i> Seleccione su Rol
+                </h3>
+                
+                <div class="role-selector">
+                    <div id="adminRole" class="role-btn active" data-role="admin">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Administrador</span>
+                    </div>
+                    <div id="workerRole" class="role-btn" data-role="worker">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Trabajador</span>
+                    </div>
+                </div>
+                
+                <button id="nextToUserInfo" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 10px;">
+                    <i class="fas fa-arrow-right"></i> Continuar
+                </button>
+                
+                <!-- NUEVO: Enlace para cambiar contraseña -->
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button id="showPasswordChange" class="btn btn-sm btn-info" style="padding: 8px 15px; font-size: 0.85rem;">
+                        <i class="fas fa-key"></i> Cambiar Contraseña
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Paso 2: Información del usuario -->
+            <div id="userInfoForm" class="user-info-form">
+                <h3 style="text-align: center; margin-bottom: 1rem; color: var(--gold-dark); font-size: 1.1rem;">
+                    <i class="fas fa-user-circle"></i> Información Personal
+                </h3>
+                
+                <form id="userInfoFormData">
+                    <div class="form-group">
+                        <label for="userName"><i class="fas fa-user"></i> Nombre *</label>
+                        <input type="text" id="userName" class="form-control" placeholder="Ingrese su nombre" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="userLastName"><i class="fas fa-user"></i> Apellido *</label>
+                        <input type="text" id="userLastName" class="form-control" placeholder="Ingrese su apellido" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="userPhone"><i class="fas fa-phone"></i> Teléfono *</label>
+                        <input type="tel" id="userPhone" class="form-control" placeholder="Ingrese su teléfono" required>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 1.5rem;">
+                        <button type="button" id="backToRoleSelection" class="btn btn-warning" style="flex: 1; padding: 10px;">
+                            <i class="fas fa-arrow-left"></i> Atrás
+                        </button>
+                        <button type="submit" id="nextToLogin" class="btn btn-primary" style="flex: 2; padding: 10px;">
+                            <i class="fas fa-arrow-right"></i> Continuar
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Paso 3: Credenciales de login -->
+            <div id="loginCredentials" class="user-info-form">
+                <h3 style="text-align: center; margin-bottom: 1rem; color: var(--gold-dark); font-size: 1.1rem;">
+                    <i class="fas fa-sign-in-alt"></i> Credenciales de Acceso
+                </h3>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username"><i class="fas fa-user"></i> Usuario *</label>
+                        <input type="text" id="username" class="form-control" placeholder="Ingrese su usuario" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password"><i class="fas fa-lock"></i> Contraseña *</label>
+                        <input type="password" id="password" class="form-control" placeholder="Ingrese su contraseña" required>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 1.5rem;">
+                        <button type="button" id="backToUserInfo" class="btn btn-warning" style="flex: 1; padding: 10px;">
+                            <i class="fas fa-arrow-left"></i> Atrás
+                        </button>
+                        <button type="submit" class="btn btn-primary" style="flex: 2; padding: 10px;">
+                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Información de credenciales de prueba -->
+            <div id="loginInfo" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--medium-gray); display: none;">
+                <p style="text-align: center; color: #666; font-size: 0.85rem;">
+                    <strong>Credenciales de prueba:</strong><br>
+                    Admin: admin / admin123<br>
+                    Trabajador: trabajador / trabajador123
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Aplicación principal -->
+    <div id="appScreen">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-content">
+                <div class="brand">
+                    <i class="fas fa-gem brand-icon"></i>
+                    <div class="brand-text">
+                        <h1>Destello de Oro 18K</h1>
+                        <span>Sistema de Gestión Profesional</span>
+                    </div>
+                </div>
+                
+                <div class="user-controls">
+                    <div id="currentUserRole" class="user-badge admin">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Administrador</span>
+                    </div>
+                    <button id="logoutButton" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Navegación -->
+        <nav class="main-nav">
+            <div class="nav-container">
+                <button class="nav-btn active" data-section="inventory">
+                    <i class="fas fa-warehouse"></i> Inventario
+                </button>
+                <button class="nav-btn" data-section="sales" id="salesNavBtn">
+                    <i class="fas fa-shopping-cart"></i> Realizar Venta
+                </button>
+                <button class="nav-btn admin-only" data-section="restock" id="restockNavBtn">
+                    <i class="fas fa-truck-loading"></i> Surtir Inventario
+                </button>
+                <button class="nav-btn admin-only" data-section="expenses" id="expensesNavBtn">
+                    <i class="fas fa-file-invoice-dollar"></i> Gastos
+                </button>
+                <button class="nav-btn admin-only" data-section="pending" id="pendingNavBtn">
+                    <i class="fas fa-clock"></i> Pagos Pendientes
+                </button>
+                <button class="nav-btn admin-only" data-section="history" id="historyNavBtn">
+                    <i class="fas fa-chart-line"></i> Historial
+                </button>
+            </div>
+        </nav>
+        
+        <!-- Contenido principal -->
+        <main class="main-content">
+            <!-- Inventario -->
+            <section id="inventory" class="section-container active">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-warehouse"></i>
+                        <h2>Gestión de Inventario</h2>
+                    </div>
+                    <button class="btn btn-primary admin-only" id="addProductBtn" style="padding: 10px 20px;">
+                        <i class="fas fa-plus-circle"></i> Nuevo Producto
+                    </button>
+                </div>
+                
+                <!-- Formulario para agregar producto -->
+                <div id="addProductForm" class="card admin-only" style="display: none;">
+                    <div class="card-header">
+                        <h3><i class="fas fa-box-open"></i> Agregar Nuevo Producto</h3>
+                    </div>
+                    <form id="productForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="productRef">Referencia *</label>
+                                <input type="text" id="productRef" class="form-control" required>
+                                <small class="form-text" style="font-size: 0.8rem;">Identificador único del producto</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="productName">Nombre del Producto *</label>
+                                <input type="text" id="productName" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="productQuantity">Cantidad Inicial *</label>
+                                <input type="number" id="productQuantity" class="form-control" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="purchasePrice">Precio de Compra *</label>
+                                <input type="number" id="purchasePrice" class="form-control" min="0" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="wholesalePrice">Precio Mayorista *</label>
+                                <input type="number" id="wholesalePrice" class="form-control" min="0" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="retailPrice">Precio al Detal *</label>
+                                <input type="number" id="retailPrice" class="form-control" min="0" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="supplier">Proveedor *</label>
+                                <input type="text" id="supplier" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Ganancia Estimada</label>
+                                <input type="text" id="profitEstimate" class="form-control" readonly style="background-color: var(--light-gray); font-size: 0.9rem;">
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+                            <button type="submit" class="btn btn-success" style="padding: 10px 20px;">
+                                <i class="fas fa-save"></i> Guardar Producto
+                            </button>
+                            <button type="button" class="btn btn-danger" id="cancelAddProduct" style="padding: 10px 20px;">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Tabla de inventario -->
+                <div class="table-wrapper">
+                    <div class="table-header">
+                        <h3><i class="fas fa-list"></i> Productos en Inventario</h3>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="inventoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Referencia</th>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Compra</th>
+                                    <th>Precio Mayorista</th>
+                                    <th>Precio Detal</th>
+                                    <th>Ganancia</th>
+                                    <th>Proveedor</th>
+                                    <th class="admin-only">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryTableBody">
+                                <!-- Los productos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Ventas -->
+            <section id="sales" class="section-container">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h2>Realizar Venta</h2>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <form id="saleForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="saleProductRef">Referencia del Producto *</label>
+                                <input type="text" id="saleProductRef" class="form-control" required>
+                                <div id="productInfo" style="margin-top: 6px; font-size: 0.85rem; color: var(--info);"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="saleQuantity">Cantidad *</label>
+                                <input type="number" id="saleQuantity" class="form-control" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="saleType">Tipo de Venta *</label>
+                                <select id="saleType" class="form-control" required>
+                                    <option value="retail">Detal</option>
+                                    <option value="wholesale">Mayorista</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="discount">Descuento (%)</label>
+                                <input type="number" id="discount" class="form-control" min="0" max="100" value="0">
+                                <small class="form-text" style="font-size: 0.8rem;">Entre 0 y 100%</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentMethod">Método de Pago *</label>
+                                <select id="paymentMethod" class="form-control" required>
+                                    <!-- MÉTODOS DE PAGO ACTUALIZADOS -->
+                                    <option value="transfer">Transferencia</option>
+                                    <option value="cash">Efectivo</option>
+                                    <option value="bold">Bold</option>
+                                    <option value="addi">Addi</option>
+                                    <option value="sistecredito">Sistecrédito</option>
+                                    <option value="cod">Contra Entrega</option>
+                                    <option value="card">Tarjeta</option>
+                                    <option value="nequi">Nequi/Daviplata</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="deliveryType">Tipo de Entrega</label>
+                                <select id="deliveryType" class="form-control">
+                                    <option value="store">Recoge en tienda</option>
+                                    <option value="delivery">Domicilio</option>
+                                    <option value="national">Envío Nacional</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- NUEVO: Información del cliente (SIEMPRE VISIBLE) -->
+                        <div id="customerInfo" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid var(--medium-gray);">
+                            <h3 style="margin-bottom: 1rem; color: var(--gold-dark); display: flex; align-items: center; gap: 8px; font-size: 1.1rem;">
+                                <i class="fas fa-user-circle"></i> Información del Cliente
+                            </h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="customerName">Nombre Completo *</label>
+                                    <input type="text" id="customerName" class="form-control" placeholder="Ej: Juan Pérez García" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerId">Cédula *</label>
+                                    <input type="text" id="customerId" class="form-control" placeholder="Ej: 1234567890" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerPhone">Teléfono *</label>
+                                    <input type="tel" id="customerPhone" class="form-control" placeholder="Ej: 3001234567" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerEmail">Correo Electrónico</label>
+                                    <input type="email" id="customerEmail" class="form-control" placeholder="Ej: cliente@email.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerAddress">Dirección *</label>
+                                    <input type="text" id="customerAddress" class="form-control" placeholder="Ej: Calle 123 #45-67" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerCity">Ciudad *</label>
+                                    <input type="text" id="customerCity" class="form-control" placeholder="Ej: Bogotá, Medellín, etc." required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="deliveryCost">Costo de Envío</label>
+                                    <input type="number" id="deliveryCost" class="form-control" min="0" value="0">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Resumen de la venta -->
+                        <div style="margin-top: 1.5rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(255, 215, 0, 0.02) 100%); border-radius: var(--radius-md); border: 1px solid var(--medium-gray);">
+                            <h3 style="margin-bottom: 1rem; color: var(--gold-dark); display: flex; align-items: center; gap: 8px; font-size: 1.1rem;">
+                                <i class="fas fa-receipt"></i> Resumen de Venta
+                            </h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">Subtotal:</div>
+                                    <div id="subtotalAmount" style="font-size: 1.2rem; font-weight: 700; color: var(--text-dark);">$0</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">Descuento:</div>
+                                    <div id="discountAmount" style="font-size: 1.2rem; font-weight: 700; color: var(--danger);">$0</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">Costo de envío:</div>
+                                    <div id="deliveryAmount" style="font-size: 1.2rem; font-weight: 700; color: var(--info);">$0</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">Total:</div>
+                                    <div id="totalAmount" style="font-size: 1.5rem; font-weight: 800; color: var(--gold-dark);">$0</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap;">
+                            <button type="submit" class="btn btn-success" style="padding: 12px 30px;">
+                                <i class="fas fa-check-circle"></i> Confirmar Venta
+                            </button>
+                            <button type="button" class="btn btn-danger" id="clearSaleForm" style="padding: 12px 30px;">
+                                <i class="fas fa-trash-alt"></i> Limpiar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+            
+            <!-- Surtir Inventario -->
+            <section id="restock" class="section-container">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-truck-loading"></i>
+                        <h2>Surtir Inventario</h2>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <form id="restockForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="restockProductRef">Referencia del Producto *</label>
+                                <input type="text" id="restockProductRef" class="form-control" required>
+                                <div id="restockProductInfo" style="margin-top: 6px; font-size: 0.85rem; color: var(--info);"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="restockQuantity">Cantidad a Surtir *</label>
+                                <input type="number" id="restockQuantity" class="form-control" min="1" required>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: center; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary" style="padding: 12px 30px;">
+                                <i class="fas fa-plus-circle"></i> Surtir Inventario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+            
+            <!-- Gastos -->
+            <section id="expenses" class="section-container">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <h2>Registro de Gastos</h2>
+                    </div>
+                    <button class="btn btn-primary" id="addExpenseBtn" style="padding: 10px 20px;">
+                        <i class="fas fa-plus-circle"></i> Nuevo Gasto
+                    </button>
+                </div>
+                
+                <!-- Formulario para agregar gasto -->
+                <div id="addExpenseForm" class="card" style="display: none;">
+                    <div class="card-header">
+                        <h3><i class="fas fa-receipt"></i> Registrar Nuevo Gasto</h3>
+                    </div>
+                    <form id="expenseForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="expenseDescription">Descripción *</label>
+                                <input type="text" id="expenseDescription" class="form-control" required>
+                                <small class="form-text" style="font-size: 0.8rem;">Ej: Pasajes, domicilios, bolsas, etc.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="expenseDate">Fecha *</label>
+                                <input type="date" id="expenseDate" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expenseAmount">Valor *</label>
+                                <input type="number" id="expenseAmount" class="form-control" min="0" step="0.01" required>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+                            <button type="submit" class="btn btn-success" style="padding: 10px 20px;">
+                                <i class="fas fa-save"></i> Registrar Gasto
+                            </button>
+                            <button type="button" class="btn btn-danger" id="cancelExpense" style="padding: 10px 20px;">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Tabla de gastos -->
+                <div class="table-wrapper">
+                    <div class="table-header">
+                        <h3><i class="fas fa-history"></i> Historial de Gastos</h3>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="expensesTable">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Descripción</th>
+                                    <th>Valor</th>
+                                    <th>Registrado por</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expensesTableBody">
+                                <!-- Los gastos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Pagos Pendientes -->
+            <section id="pending" class="section-container">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-clock"></i>
+                        <h2>Pagos Pendientes</h2>
+                    </div>
+                </div>
+                
+                <!-- Tabla de ventas pendientes -->
+                <div class="table-wrapper">
+                    <div class="table-header">
+                        <h3><i class="fas fa-hourglass-half"></i> Ventas Pendientes de Confirmación</h3>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="pendingTable">
+                            <thead>
+                                <tr>
+                                    <th>ID Venta</th>
+                                    <th>Cliente</th>
+                                    <th>Producto</th>
+                                    <th>Total</th>
+                                    <th>Método de Pago</th>
+                                    <th>Fecha</th>
+                                    <th>Vendedor</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingTableBody">
+                                <!-- Las ventas pendientes se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Historial -->
+            <section id="history" class="section-container">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-chart-line"></i>
+                        <h2>Historial Mensual</h2>
+                    </div>
+                </div>
+                
+                <!-- Controles de fecha -->
+                <div class="history-controls">
+                    <select id="monthSelect" class="history-select">
+                        <!-- Los meses se cargarán dinámicamente -->
+                    </select>
+                    <select id="yearSelect" class="history-select">
+                        <!-- Los años se cargarán dinámicamente -->
+                    </select>
+                </div>
+                
+                <!-- Resumen del mes -->
+                <div class="stats-grid" id="monthlySummary">
+                    <!-- Los datos se cargarán dinámicamente -->
+                </div>
+                
+                <!-- Tabla de historial - MODIFICADA CON NUEVA COLUMNA -->
+                <div class="table-wrapper">
+                    <div class="table-header">
+                        <h3><i class="fas fa-list-alt"></i> Detalles del Historial</h3>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="historyTable">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th>Usuario</th>
+                                    <th>Cantidad</th>
+                                    <th>Valor Total</th>
+                                    <th class="admin-only">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- Los detalles del historial se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="main-footer">
+            <div class="footer-content">
+                <i class="fas fa-gem footer-logo"></i>
+                <h3>Destello de Oro 18K</h3>
+                <p>Sistema de Gestión de Inventario y Ventas</p>
+                <p>Contacto: 3182687488</p>
+                <div class="copyright">
+                    <p>© 2026 Destello de Oro 18K. Todos los derechos reservados.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Modal de factura MEJORADO CON QR FUNCIONAL -->
+    <div id="invoiceModal" class="invoice-modal">
+        <div class="invoice-container enhanced-invoice">
+            <div class="invoice-header">
+                <i class="fas fa-gem invoice-logo"></i>
+                <h2 style="color: #D4AF37; font-family: 'Playfair Display', serif;">Destello de Oro 18K</h2>
+                <p>Factura de Venta - Tienda de Oro Laminado</p>
+            </div>
+            
+            <div class="company-info">
+                <div class="company-details">
+                    <p><strong>DESTELLO DE ORO 18K</strong></p>
+                    <p>Tienda de Oro Laminado</p>
+                    <p>Contacto: 3182687488</p>
+                    <p>Email: info@destellodeoro18k.com</p>
+                </div>
+                <div class="invoice-details">
+                    <div class="invoice-title">FACTURA DE VENTA</div>
+                    <p id="invoiceNumber">Factura #0001</p>
+                    <p id="invoiceDate">Fecha: 01/01/2026</p>
+                    <p id="invoicePaymentMethod">Método de Pago: Efectivo</p>
+                </div>
+            </div>
+            
+            <div class="client-info">
+                <h3>DATOS DEL CLIENTE</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
+                    <div>
+                        <strong>Nombre:</strong> <span id="invoiceCustomerName">Cliente de mostrador</span>
+                    </div>
+                    <div>
+                        <strong>Cédula:</strong> <span id="invoiceCustomerId">No proporcionada</span>
+                    </div>
+                    <div>
+                        <strong>Celular:</strong> <span id="invoiceCustomerPhone">No proporcionado</span>
+                    </div>
+                    <div>
+                        <strong>Dirección:</strong> <span id="invoiceCustomerAddress">No proporcionada</span>
+                    </div>
+                    <div>
+                        <strong>Ciudad:</strong> <span id="invoiceCustomerCity">No proporcionada</span>
+                    </div>
+                    <div>
+                        <strong>Correo:</strong> <span id="invoiceCustomerEmail">No proporcionado</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3 style="color: #D4AF37; margin-bottom: 0.75rem; font-size: 1rem;">DETALLES DE LA COMPRA</h3>
+                <table class="product-table">
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Ref</th>
+                            <th>Cantidad</th>
+                            <th>Precio unitario</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoiceItemsBody">
+                        <!-- Los items se cargarán dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="warranty-section">
+                <h4>📋 GARANTÍA DE TU JOYA</h4>
+                <p style="font-size: 0.85rem; line-height: 1.4;">
+                    Tu joya cuenta con <strong>12 meses de garantía</strong> por cambio de color desde la fecha de compra. 
+                    Esta garantía no cubra daños por mal uso, como cadenas rotas, rayones, modificaciones o piezas incompletas. 
+                    En caso de aplicar la garantía, tu joya será reemplazada por una nueva (sin opción de reembolso). 
+                    Si recibes tu joya en mal estado, repórtalo dentro de los <strong>3 días hábiles</strong> posteriores a la entrega 
+                    para gestionar el cambio con gusto.
+                </p>
+                <p style="font-size: 0.85rem; line-height: 1.4; margin-top: 8px;">
+                    <strong>IMPORTANTE:</strong> Si tu joya presenta un cambio de tonalidad dentro del tiempo establecido, 
+                    deberás cubrir el costo del envío hacia nuestras instalaciones, y nosotros asumimos el costo del envío de regreso.
+                </p>
+            </div>
+            
+            <!-- NUEVO: QR CODE FUNCIONAL 100% -->
+            <div class="qr-code-section">
+                <h3 class="qr-title">📱 ESCANEA PARA SEGUIRNOS</h3>
+                <p class="qr-description">Escanea el código QR con tu cámara para visitar nuestras redes sociales</p>
+                
+                <!-- Contenedor del QR -->
+                <div class="qr-container">
+                    <div id="qrCodeCanvas"></div>
+                </div>
+                
+                <p class="qr-description">
+                    Contenido del QR:<br>
+                    • Instagram: @destellodeoro18k<br>
+                    • WhatsApp: 3182687488<br>
+                    • Página web: destellodeoro18k.com
+                </p>
+                
+                <div class="social-links">
+                    <a href="https://www.instagram.com/destellodeoro18k" target="_blank" class="social-link instagram">
+                        <i class="fab fa-instagram"></i> Instagram
+                    </a>
+                    <a href="https://wa.me/message/YUXMM6PDVXEGN1" target="_blank" class="social-link whatsapp">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </a>
+                    <a href="https://destellodeoro18k.com" target="_blank" class="social-link website">
+                        <i class="fas fa-globe"></i> Página Web
+                    </a>
+                </div>
+            </div>
+            
+            <div class="total-section">
+                <div style="font-size: 1.2rem; font-weight: bold;">
+                    TOTAL: <span id="invoiceTotal" class="total-amount">$0</span>
+                </div>
+            </div>
+            
+            <div class="contact-info">
+                <p>¡Gracias por tu compra! Tu satisfacción es nuestro mayor compromiso.</p>
+                <p>Para consultas o garantías, contacta al: <strong>3182687488</strong></p>
+                <p style="font-style: italic; margin-top: 8px; font-size: 0.85rem;">"En Destello de Oro 18K, cada pieza cuenta una historia de elegancia"</p>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap;">
+                <button id="downloadInvoice" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.85rem;">
+                    <i class="fas fa-download"></i> Descargar PDF
+                </button>
+                <button id="shareInvoice" class="btn btn-success" style="padding: 10px 20px; font-size: 0.85rem;">
+                    <i class="fab fa-whatsapp"></i> Compartir por WhatsApp
+                </button>
+                <button id="printInvoice" class="btn btn-info" style="padding: 10px 20px; font-size: 0.85rem;">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+                <button id="closeInvoice" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.85rem;">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentUser = null;
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let selectedRole = 'admin';
+        
+        // URLs de redes sociales
+        const socialMediaUrls = {
+            instagram: 'https://www.instagram.com/destellodeoro18k',
+            whatsapp: 'https://wa.me/message/YUXMM6PDVXEGN1',
+            website: 'https://destellodeoro18k.com'
+        };
+        
+        // Métodos de pago actualizados
+        const paymentMethods = {
+            'transfer': { name: 'Transferencia', class: 'payment-transfer' },
+            'cash': { name: 'Efectivo', class: 'payment-cash' },
+            'bold': { name: 'Bold', class: 'payment-bold' },
+            'addi': { name: 'Addi', class: 'payment-addi' },
+            'sistecredito': { name: 'Sistecrédito', class: 'payment-sistecredito' },
+            'cod': { name: 'Contra Entrega', class: 'payment-cod' },
+            'card': { name: 'Tarjeta', class: 'payment-card' },
+            'nequi': { name: 'Nequi/Daviplata', class: 'payment-nequi' }
+        };
+        
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar datos del localStorage
+            loadInitialData();
+            
+            // Configurar eventos de login
+            setupLoginEvents();
+            
+            // Configurar eventos de navegación
+            setupNavigationEvents();
+            
+            // Configurar eventos de formularios
+            setupFormEvents();
+            
+            // Configurar eventos de la factura
+            setupInvoiceEvents();
+            
+            // Configurar diálogo personalizado
+            setupCustomDialog();
+            
+            // Configurar cambio de contraseña
+            setupPasswordChange();
+            
+            // Inicializar pasos del login
+            initLoginSteps();
+            
+            // Verificar si hay sesión activa
+            const savedUser = localStorage.getItem('destelloOroCurrentUser');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    console.log('Usuario cargado desde localStorage:', currentUser);
+                    showApp();
+                } catch (error) {
+                    console.error('Error al cargar usuario:', error);
+                    localStorage.removeItem('destelloOroCurrentUser');
+                }
+            }
+        });
+        
+        // Inicializar pasos del login
+        function initLoginSteps() {
+            // Mostrar solo el primer paso (selección de rol)
+            showLoginStep('roleSelection');
+        }
+        
+        // Mostrar paso específico del login
+        function showLoginStep(stepId) {
+            // Ocultar todos los pasos
+            document.getElementById('roleSelection').style.display = 'none';
+            document.getElementById('userInfoForm').style.display = 'none';
+            document.getElementById('loginCredentials').style.display = 'none';
+            document.getElementById('loginInfo').style.display = 'none';
+            
+            // Mostrar el paso solicitado
+            document.getElementById(stepId).style.display = 'block';
+            
+            // Si es el paso de credenciales, mostrar info
+            if (stepId === 'loginCredentials') {
+                document.getElementById('loginInfo').style.display = 'block';
+            }
+        }
+        
+        // Configurar cambio de contraseña
+        function setupPasswordChange() {
+            const showBtn = document.getElementById('showPasswordChange');
+            const closeBtn = document.getElementById('closePasswordChange');
+            const cancelBtn = document.getElementById('cancelPasswordChange');
+            const modal = document.getElementById('passwordChangeModal');
+            const form = document.getElementById('passwordChangeForm');
+            
+            // Mostrar modal
+            showBtn.addEventListener('click', function() {
+                modal.style.display = 'flex';
+                
+                // Cargar usuarios en el select
+                loadUsersForPasswordChange();
+                
+                // Enfocar el primer campo
+                setTimeout(() => {
+                    document.getElementById('adminUsername').focus();
+                }, 100);
+            });
+            
+            // Cerrar modal
+            closeBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+                form.reset();
+            });
+            
+            cancelBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+                form.reset();
+            });
+            
+            // Cerrar modal al hacer clic fuera
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                    form.reset();
+                }
+            });
+            
+            // Enviar formulario
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const adminUsername = document.getElementById('adminUsername').value;
+                const adminPassword = document.getElementById('adminPassword').value;
+                const userToChange = document.getElementById('userToChange').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                // Validar que las contraseñas coincidan
+                if (newPassword !== confirmPassword) {
+                    await showDialog('Error', 'Las contraseñas no coinciden.', 'error');
+                    return;
+                }
+                
+                // Validar credenciales de administrador
+                const users = JSON.parse(localStorage.getItem('destelloOroUsers'));
+                const adminUser = users.find(u => u.username === adminUsername && u.password === adminPassword && u.role === 'admin');
+                
+                if (!adminUser) {
+                    await showDialog('Error', 'Credenciales de administrador incorrectas.', 'error');
+                    return;
+                }
+                
+                // Buscar usuario a modificar
+                const userIndex = users.findIndex(u => u.username === userToChange);
+                
+                if (userIndex === -1) {
+                    await showDialog('Error', 'Usuario no encontrado.', 'error');
+                    return;
+                }
+                
+                // Actualizar contraseña
+                users[userIndex].password = newPassword;
+                localStorage.setItem('destelloOroUsers', JSON.stringify(users));
+                
+                // Cerrar modal y limpiar formulario
+                modal.style.display = 'none';
+                form.reset();
+                
+                await showDialog('Éxito', 'Contraseña cambiada exitosamente.', 'success');
+            });
+        }
+        
+        // Cargar usuarios para cambio de contraseña
+        function loadUsersForPasswordChange() {
+            const userSelect = document.getElementById('userToChange');
+            const users = JSON.parse(localStorage.getItem('destelloOroUsers'));
+            
+            // Limpiar select
+            userSelect.innerHTML = '<option value="">Seleccione un usuario</option>';
+            
+            // Agregar opciones (sin el usuario "marlon")
+            users.forEach(user => {
+                if (user.username !== 'marlon') { // Eliminar el usuario "marlon carabali"
+                    const option = document.createElement('option');
+                    option.value = user.username;
+                    option.textContent = `${user.name} ${user.lastName || ''} (${user.username}) - ${user.role === 'admin' ? 'Administrador' : 'Trabajador'}`;
+                    userSelect.appendChild(option);
+                }
+            });
+        }
+        
+        // Cargar datos iniciales del localStorage
+        function loadInitialData() {
+            // Inicializar datos si no existen
+            if (!localStorage.getItem('destelloOroProducts')) {
+                const initialProducts = [
+                    {
+                        id: 'REF001',
+                        name: 'Cadena de Oro Laminado 18K - Elegante',
+                        quantity: 10,
+                        purchasePrice: 150000,
+                        wholesalePrice: 180000,
+                        retailPrice: 200000,
+                        supplier: 'Proveedor Oro S.A.',
+                        addedBy: 'admin',
+                        dateAdded: new Date().toISOString()
+                    },
+                    {
+                        id: 'REF002',
+                        name: 'Anillo de Matrimonio 18K - Clásico',
+                        quantity: 5,
+                        purchasePrice: 80000,
+                        wholesalePrice: 100000,
+                        retailPrice: 120000,
+                        supplier: 'Joyas Preciosas Ltda.',
+                        addedBy: 'admin',
+                        dateAdded: new Date().toISOString()
+                    },
+                    {
+                        id: 'REF003',
+                        name: 'Aretes de Corazón 18K - Brillantes',
+                        quantity: 15,
+                        purchasePrice: 60000,
+                        wholesalePrice: 75000,
+                        retailPrice: 90000,
+                        supplier: 'Accesorios Dorados S.A.S.',
+                        addedBy: 'admin',
+                        dateAdded: new Date().toISOString()
+                    }
+                ];
+                localStorage.setItem('destelloOroProducts', JSON.stringify(initialProducts));
+            }
+            
+            if (!localStorage.getItem('destelloOroSales')) {
+                localStorage.setItem('destelloOroSales', JSON.stringify([]));
+            }
+            
+            if (!localStorage.getItem('destelloOroPendingSales')) {
+                localStorage.setItem('destelloOroPendingSales', JSON.stringify([]));
+            }
+            
+            if (!localStorage.getItem('destelloOroExpenses')) {
+                localStorage.setItem('destelloOroExpenses', JSON.stringify([]));
+            }
+            
+            if (!localStorage.getItem('destelloOroRestocks')) {
+                localStorage.setItem('destelloOroRestocks', JSON.stringify([]));
+            }
+            
+            if (!localStorage.getItem('destelloOroNextInvoiceId')) {
+                localStorage.setItem('destelloOroNextInvoiceId', '1001');
+            }
+            
+            // Inicializar usuarios con información personal (SIN "marlon carabali")
+            if (!localStorage.getItem('destelloOroUsers')) {
+                const users = [
+                    { 
+                        username: 'admin', 
+                        password: 'admin123', 
+                        role: 'admin', 
+                        name: 'Administrador',
+                        lastName: 'Principal',
+                        phone: '',
+                        personalInfoSaved: false
+                    },
+                    { 
+                        username: 'trabajador', 
+                        password: 'trabajador123', 
+                        role: 'worker', 
+                        name: 'Vendedor',
+                        lastName: 'Principal',
+                        phone: '',
+                        personalInfoSaved: false
+                    }
+                ];
+                localStorage.setItem('destelloOroUsers', JSON.stringify(users));
+            }
+            
+            // Inicializar información de sesión
+            if (!localStorage.getItem('destelloOroSessionInfo')) {
+                localStorage.setItem('destelloOroSessionInfo', JSON.stringify({}));
+            }
+        }
+        
+        // Configurar diálogo personalizado
+        function setupCustomDialog() {
+            const dialog = document.getElementById('customDialog');
+            const confirmBtn = document.getElementById('dialogConfirm');
+            const cancelBtn = document.getElementById('dialogCancel');
+            
+            confirmBtn.addEventListener('click', function() {
+                dialog.style.display = 'none';
+                if (typeof window.dialogCallback === 'function') {
+                    window.dialogCallback(true);
+                }
+            });
+            
+            cancelBtn.addEventListener('click', function() {
+                dialog.style.display = 'none';
+                if (typeof window.dialogCallback === 'function') {
+                    window.dialogCallback(false);
+                }
+            });
+        }
+        
+        // Mostrar diálogo personalizado
+        function showDialog(title, message, type = 'info', showCancel = false) {
+            return new Promise((resolve) => {
+                const dialog = document.getElementById('customDialog');
+                const icon = document.getElementById('dialogIcon');
+                const dialogTitle = document.getElementById('dialogTitle');
+                const dialogMessage = document.getElementById('dialogMessage');
+                const confirmBtn = document.getElementById('dialogConfirm');
+                const cancelBtn = document.getElementById('dialogCancel');
+                
+                // Configurar icono según tipo
+                icon.innerHTML = getDialogIcon(type);
+                icon.style.color = getDialogColor(type);
+                
+                // Configurar texto
+                dialogTitle.textContent = title;
+                dialogMessage.textContent = message;
+                
+                // Configurar botones
+                cancelBtn.style.display = showCancel ? 'inline-flex' : 'none';
+                
+                // Guardar callback
+                window.dialogCallback = (result) => {
+                    resolve(result);
+                    delete window.dialogCallback;
+                };
+                
+                // Mostrar diálogo
+                dialog.style.display = 'flex';
+            });
+        }
+        
+        // Obtener icono para diálogo
+        function getDialogIcon(type) {
+            switch(type) {
+                case 'success': return '<i class="fas fa-check-circle"></i>';
+                case 'error': return '<i class="fas fa-exclamation-circle"></i>';
+                case 'warning': return '<i class="fas fa-exclamation-triangle"></i>';
+                case 'info': return '<i class="fas fa-info-circle"></i>';
+                case 'question': return '<i class="fas fa-question-circle"></i>';
+                default: return '<i class="fas fa-info-circle"></i>';
+            }
+        }
+        
+        // Obtener color para diálogo
+        function getDialogColor(type) {
+            switch(type) {
+                case 'success': return 'var(--success)';
+                case 'error': return 'var(--danger)';
+                case 'warning': return 'var(--warning)';
+                case 'info': return 'var(--info)';
+                case 'question': return 'var(--gold-primary)';
+                default: return 'var(--info)';
+            }
+        }
+        
+        // Configurar eventos de login - VERSIÓN CORREGIDA
+        function setupLoginEvents() {
+            const adminRoleBtn = document.getElementById('adminRole');
+            const workerRoleBtn = document.getElementById('workerRole');
+            const nextToUserInfoBtn = document.getElementById('nextToUserInfo');
+            const backToRoleSelectionBtn = document.getElementById('backToRoleSelection');
+            const nextToLoginBtn = document.getElementById('nextToLogin');
+            const backToUserInfoBtn = document.getElementById('backToUserInfo');
+            const loginForm = document.getElementById('loginForm');
+            const userInfoForm = document.getElementById('userInfoFormData');
+            
+            // Alternar entre roles
+            adminRoleBtn.addEventListener('click', function() {
+                adminRoleBtn.classList.add('active');
+                workerRoleBtn.classList.remove('active');
+                selectedRole = 'admin';
+            });
+            
+            workerRoleBtn.addEventListener('click', function() {
+                workerRoleBtn.classList.add('active');
+                adminRoleBtn.classList.remove('active');
+                selectedRole = 'worker';
+            });
+            
+            // Paso 1: Continuar a información personal
+            nextToUserInfoBtn.addEventListener('click', function() {
+                showLoginStep('userInfoForm');
+                
+                // Pre-llenar formulario si ya hay información guardada
+                const sessionInfo = JSON.parse(localStorage.getItem('destelloOroSessionInfo') || '{}');
+                const userKey = `${selectedRole}_info`;
+                
+                if (sessionInfo[userKey]) {
+                    document.getElementById('userName').value = sessionInfo[userKey].name || '';
+                    document.getElementById('userLastName').value = sessionInfo[userKey].lastName || '';
+                    document.getElementById('userPhone').value = sessionInfo[userKey].phone || '';
+                }
+            });
+            
+            // Volver a selección de rol
+            backToRoleSelectionBtn.addEventListener('click', function() {
+                showLoginStep('roleSelection');
+            });
+            
+            // Paso 2: Continuar a credenciales
+            nextToLoginBtn.addEventListener('click', function() {
+                showLoginStep('loginCredentials');
+            });
+            
+            // Volver a información personal
+            backToUserInfoBtn.addEventListener('click', function() {
+                showLoginStep('userInfoForm');
+            });
+            
+            // Guardar información personal
+            userInfoForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Guardar información en localStorage
+                const sessionInfo = JSON.parse(localStorage.getItem('destelloOroSessionInfo') || '{}');
+                const userKey = `${selectedRole}_info`;
+                
+                sessionInfo[userKey] = {
+                    name: document.getElementById('userName').value,
+                    lastName: document.getElementById('userLastName').value,
+                    phone: document.getElementById('userPhone').value,
+                    date: new Date().toISOString()
+                };
+                
+                localStorage.setItem('destelloOroSessionInfo', JSON.stringify(sessionInfo));
+                
+                // Continuar al siguiente paso
+                showLoginStep('loginCredentials');
+            });
+            
+            // Manejar login - VERSIÓN COMPLETAMENTE CORREGIDA
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const expectedRole = selectedRole;
+                
+                // Validar credenciales
+                const users = JSON.parse(localStorage.getItem('destelloOroUsers'));
+                const userIndex = users.findIndex(u => u.username === username && u.password === password && u.role === expectedRole);
+                
+                if (userIndex !== -1) {
+                    const user = users[userIndex];
+                    
+                    // Obtener información personal desde el formulario (si se llenó)
+                    const sessionInfo = JSON.parse(localStorage.getItem('destelloOroSessionInfo') || '{}');
+                    const userKey = `${selectedRole}_info`;
+                    
+                    // Verificar si hay información personal en el formulario
+                    const hasPersonalInfo = sessionInfo[userKey] && 
+                                           sessionInfo[userKey].name && 
+                                           sessionInfo[userKey].lastName;
+                    
+                    // Si hay información personal en el formulario, actualizar el usuario
+                    if (hasPersonalInfo) {
+                        users[userIndex].name = sessionInfo[userKey].name;
+                        users[userIndex].lastName = sessionInfo[userKey].lastName;
+                        users[userIndex].phone = sessionInfo[userKey].phone || '';
+                        users[userIndex].personalInfoSaved = true;
+                        
+                        // Guardar cambios en localStorage
+                        localStorage.setItem('destelloOroUsers', JSON.stringify(users));
+                    }
+                    
+                    // Crear objeto de usuario actual con la información MÁS ACTUAL
+                    const updatedUser = users[userIndex];
+                    
+                    // Construir nombre para mostrar
+                    let displayName;
+                    if (updatedUser.name && updatedUser.lastName) {
+                        displayName = `${updatedUser.name} ${updatedUser.lastName}`;
+                    } else if (updatedUser.name) {
+                        displayName = updatedUser.name;
+                    } else {
+                        displayName = updatedUser.username;
+                    }
+                    
+                    // Crear objeto de usuario actual
+                    currentUser = {
+                        username: updatedUser.username,
+                        role: updatedUser.role,
+                        name: updatedUser.name || '',
+                        lastName: updatedUser.lastName || '',
+                        phone: updatedUser.phone || '',
+                        displayName: displayName
+                    };
+                    
+                    // Guardar sesión COMPLETA en localStorage
+                    localStorage.setItem('destelloOroCurrentUser', JSON.stringify(currentUser));
+                    
+                    // Limpiar información de sesión temporal para evitar conflictos
+                    delete sessionInfo[userKey];
+                    localStorage.setItem('destelloOroSessionInfo', JSON.stringify(sessionInfo));
+                    
+                    // Mostrar mensaje de éxito
+                    await showDialog('¡Bienvenido!', `Bienvenido ${currentUser.displayName}`, 'success');
+                    
+                    // Mostrar aplicación
+                    showApp();
+                } else {
+                    await showDialog('Error de Acceso', 'Credenciales incorrectas. Por favor verifique usuario y contraseña.', 'error');
+                }
+            });
+        }
+        
+        // Mostrar la aplicación después del login - VERSIÓN CORREGIDA
+        function showApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appScreen').style.display = 'block';
+            
+            // Asegurarse de que currentUser esté cargado
+            const savedUser = localStorage.getItem('destelloOroCurrentUser');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    console.log('Usuario cargado en showApp:', currentUser);
+                } catch (error) {
+                    console.error('Error al cargar usuario:', error);
+                }
+            }
+            
+            // Actualizar interfaz según rol
+            updateUIForUserRole();
+            
+            // Cargar datos iniciales
+            loadInventoryTable();
+            loadExpensesTable();
+            loadPendingSalesTable();
+            loadHistoryData();
+            
+            // Configurar selectores de fecha para historial
+            setupDateSelectors();
+        }
+        
+        // Actualizar interfaz según rol del usuario - VERSIÓN MODIFICADA PARA TRABAJADOR
+        function updateUIForUserRole() {
+            if (!currentUser) {
+                console.error('No hay usuario actual definido');
+                return;
+            }
+            
+            const isAdmin = currentUser.role === 'admin';
+            const isWorker = currentUser.role === 'worker';
+            const userBadge = document.getElementById('currentUserRole');
+            
+            // Usar displayName del usuario actual
+            const displayName = currentUser.displayName || 
+                               currentUser.name || 
+                               (isAdmin ? 'Administrador' : 'Trabajador');
+            
+            // Actualizar badge del usuario
+            if (isAdmin) {
+                userBadge.className = 'user-badge admin';
+                userBadge.innerHTML = `
+                    <i class="fas fa-user-shield"></i>
+                    <span>${displayName} (Administrador)</span>
+                `;
+            } else {
+                userBadge.className = 'user-badge worker';
+                userBadge.innerHTML = `
+                    <i class="fas fa-user-tie"></i>
+                    <span>${displayName} (Trabajador)</span>
+                `;
+            }
+            
+            // Mostrar/ocultar elementos según rol
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(element => {
+                element.style.display = isAdmin ? '' : 'none';
+            });
+            
+            // Si es trabajador, asegurarse de que solo pueda ver inventario y ventas
+            if (isWorker) {
+                // Ocultar botones de navegación no permitidos
+                const navButtons = document.querySelectorAll('.nav-btn');
+                navButtons.forEach(button => {
+                    const section = button.dataset.section;
+                    if (section !== 'inventory' && section !== 'sales') {
+                        button.style.display = 'none';
+                    }
+                });
+                
+                // Mostrar solo las secciones de inventario y ventas
+                const sections = document.querySelectorAll('.section-container');
+                sections.forEach(section => {
+                    if (section.id !== 'inventory' && section.id !== 'sales') {
+                        section.style.display = 'none';
+                    }
+                });
+                
+                // Ocultar botones de agregar producto en inventario (solo para trabajador)
+                const addProductBtn = document.getElementById('addProductBtn');
+                if (addProductBtn) {
+                    addProductBtn.style.display = 'none';
+                }
+                
+                // Ocultar formulario de agregar producto si está visible
+                const addProductForm = document.getElementById('addProductForm');
+                if (addProductForm) {
+                    addProductForm.style.display = 'none';
+                }
+            }
+        }
+        
+        // Configurar eventos de navegación
+        function setupNavigationEvents() {
+            const navButtons = document.querySelectorAll('.nav-btn');
+            const sections = document.querySelectorAll('.section-container');
+            
+            // Navegación entre secciones
+            navButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetSection = this.dataset.section;
+                    
+                    // Verificar si el usuario tiene acceso a esta sección
+                    if (currentUser && currentUser.role === 'worker' && 
+                        targetSection !== 'inventory' && targetSection !== 'sales') {
+                        showDialog('Acceso Restringido', 'No tiene permiso para acceder a esta sección.', 'warning');
+                        return;
+                    }
+                    
+                    // Actualizar botones activos
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Mostrar sección correspondiente
+                    sections.forEach(section => {
+                        section.classList.remove('active');
+                        if (section.id === targetSection) {
+                            section.classList.add('active');
+                        }
+                    });
+                    
+                    // Si es la sección de historial, actualizar datos
+                    if (targetSection === 'history') {
+                        loadHistoryData();
+                    }
+                });
+            });
+            
+            // Botón de cerrar sesión
+            document.getElementById('logoutButton').addEventListener('click', async function() {
+                const confirmed = await showDialog(
+                    'Cerrar Sesión',
+                    '¿Está seguro de que desea cerrar sesión?',
+                    'question',
+                    true
+                );
+                
+                if (confirmed) {
+                    localStorage.removeItem('destelloOroCurrentUser');
+                    currentUser = null;
+                    document.getElementById('appScreen').style.display = 'none';
+                    document.getElementById('loginScreen').style.display = 'flex';
+                    
+                    // Restablecer login
+                    initLoginSteps();
+                    document.getElementById('adminRole').classList.add('active');
+                    document.getElementById('workerRole').classList.remove('active');
+                    document.getElementById('loginForm').reset();
+                    selectedRole = 'admin';
+                }
+            });
+            
+            // Botón para agregar producto (solo visible para admin)
+            document.getElementById('addProductBtn').addEventListener('click', function() {
+                // Verificar si es administrador
+                if (currentUser && currentUser.role !== 'admin') {
+                    showDialog('Acceso Restringido', 'Solo el administrador puede agregar productos.', 'warning');
+                    return;
+                }
+                
+                const form = document.getElementById('addProductForm');
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+                if (form.style.display === 'block') {
+                    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+            
+            // Cancelar agregar producto
+            document.getElementById('cancelAddProduct').addEventListener('click', function() {
+                document.getElementById('addProductForm').style.display = 'none';
+                document.getElementById('productForm').reset();
+                document.getElementById('profitEstimate').value = '';
+            });
+            
+            // Botón para agregar gasto
+            document.getElementById('addExpenseBtn').addEventListener('click', function() {
+                // Verificar si es administrador
+                if (currentUser && currentUser.role !== 'admin') {
+                    showDialog('Acceso Restringido', 'Solo el administrador puede registrar gastos.', 'warning');
+                    return;
+                }
+                
+                const form = document.getElementById('addExpenseForm');
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+                document.getElementById('expenseDate').valueAsDate = new Date();
+                if (form.style.display === 'block') {
+                    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+            
+            // Cancelar agregar gasto
+            document.getElementById('cancelExpense').addEventListener('click', function() {
+                document.getElementById('addExpenseForm').style.display = 'none';
+                document.getElementById('expenseForm').reset();
+            });
+        }
+        
+        // Configurar eventos de formularios
+        function setupFormEvents() {
+            // Calcular ganancia estimada al cambiar precios
+            document.getElementById('retailPrice').addEventListener('input', calculateProfit);
+            document.getElementById('purchasePrice').addEventListener('input', calculateProfit);
+            
+            // Formulario de producto (solo para admin)
+            document.getElementById('productForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Verificar si es administrador
+                if (currentUser && currentUser.role !== 'admin') {
+                    await showDialog('Acceso Restringido', 'Solo el administrador puede agregar productos.', 'error');
+                    return;
+                }
+                
+                // Obtener datos del formulario
+                const product = {
+                    id: document.getElementById('productRef').value.trim().toUpperCase(),
+                    name: document.getElementById('productName').value.trim(),
+                    quantity: parseInt(document.getElementById('productQuantity').value),
+                    purchasePrice: parseFloat(document.getElementById('purchasePrice').value),
+                    wholesalePrice: parseFloat(document.getElementById('wholesalePrice').value),
+                    retailPrice: parseFloat(document.getElementById('retailPrice').value),
+                    supplier: document.getElementById('supplier').value.trim(),
+                    addedBy: currentUser.username,
+                    dateAdded: new Date().toISOString()
+                };
+                
+                // Validar que la referencia no exista
+                const products = JSON.parse(localStorage.getItem('destelloOroProducts'));
+                const existingProduct = products.find(p => p.id === product.id);
+                
+                if (existingProduct) {
+                    await showDialog('Error', 'Ya existe un producto con esa referencia. Use una referencia única.', 'error');
+                    return;
+                }
+                
+                // Agregar producto
+                products.push(product);
+                localStorage.setItem('destelloOroProducts', JSON.stringify(products));
+                
+                // Actualizar tabla
+                loadInventoryTable();
+                
+                // Limpiar formulario
+                this.reset();
+                document.getElementById('profitEstimate').value = '';
+                
+                // Ocultar formulario
+                document.getElementById('addProductForm').style.display = 'none';
+                
+                await showDialog('Éxito', 'Producto agregado exitosamente al inventario.', 'success');
+            });
+            
+            // Formulario de surtir inventario (solo para admin)
+            document.getElementById('restockForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Verificar si es administrador
+                if (currentUser && currentUser.role !== 'admin') {
+                    await showDialog('Acceso Restringido', 'Solo el administrador puede surtir inventario.', 'error');
+                    return;
+                }
+                
+                const productRef = document.getElementById('restockProductRef').value.trim().toUpperCase();
+                const quantity = parseInt(document.getElementById('restockQuantity').value);
+                
+                // Validar datos
+                if (!productRef || isNaN(quantity) || quantity <= 0) {
+                    await showDialog('Error', 'Por favor ingrese datos válidos.', 'error');
+                    return;
+                }
+                
+                // Buscar producto
+                const products = JSON.parse(localStorage.getItem('destelloOroProducts'));
+                const productIndex = products.findIndex(p => p.id === productRef);
+                
+                if (productIndex === -1) {
+                    await showDialog('Error', 'No se encontró un producto con esa referencia.', 'error');
+                    return;
+                }
+                
+                // Actualizar cantidad
+                products[productIndex].quantity += quantity;
+                localStorage.setItem('destelloOroProducts', JSON.stringify(products));
+                
+                // Registrar en historial de surtidos
+                const restocks = JSON.parse(localStorage.getItem('destelloOroRestocks'));
+                restocks.push({
+                    productId: productRef,
+                    productName: products[productIndex].name,
+                    quantity: quantity,
+                    date: new Date().toISOString(),
+                    totalValue: quantity * products[productIndex].purchasePrice,
+                    user: currentUser.username
+                });
+                localStorage.setItem('destelloOroRestocks', JSON.stringify(restocks));
+                
+                // Actualizar tabla
+                loadInventoryTable();
+                
+                // Limpiar formulario
+                this.reset();
+                document.getElementById('restockProductInfo').textContent = '';
+                
+                await showDialog('Éxito', 'Inventario surtido exitosamente.', 'success');
+            });
+            
+            // Buscar producto al escribir referencia (surtir)
+            document.getElementById('restockProductRef').addEventListener('input', function() {
+                const productRef = this.value.trim().toUpperCase();
+                if (productRef) {
+                    const products = JSON.parse(localStorage.getItem('destelloOroProducts'));
+                    const product = products.find(p => p.id === productRef);
+                    
+                    if (product) {
+                        document.getElementById('restockProductInfo').innerHTML = 
+                            `<strong>${product.name}</strong><br>
+                             Stock actual: ${product.quantity} unidades<br>
+                             Precio detal: ${formatCurrency(product.retailPrice)}`;
+                    } else {
+                        document.getElementById('restockProductInfo').textContent = '❌ Producto no encontrado';
+                    }
+                } else {
+                    document.getElementById('restockProductInfo').textContent = '';
+                }
+            });
+            
+            // Formulario de gastos (solo para admin)
+            document.getElementById('expenseForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Verificar si es administrador
+                if (currentUser && currentUser.role !== 'admin') {
+                    await showDialog('Acceso Restringido', 'Solo el administrador puede registrar gastos.', 'error');
+                    return;
+                }
+                
+                const expense = {
+                    id: Date.now().toString(),
+                    description: document.getElementById('expenseDescription').value.trim(),
+                    date: document.getElementById('expenseDate').value,
+                    amount: parseFloat(document.getElementById('expenseAmount').value),
+                    user: currentUser.username
+                };
+                
+                // Validar datos
+                if (!expense.description || !expense.date || isNaN(expense.amount) || expense.amount <= 0) {
+                    await showDialog('Error', 'Por favor ingrese datos válidos.', 'error');
+                    return;
+                }
+                
+                // Agregar gasto
+                const expenses = JSON.parse(localStorage.getItem('destelloOroExpenses'));
+                expenses.push(expense);
+                localStorage.setItem('destelloOroExpenses', JSON.stringify(expenses));
+                
+                // Actualizar tabla
+                loadExpensesTable();
+                
+                // Limpiar formulario
+                this.reset();
+                
+                // Ocultar formulario
+                document.getElementById('addExpenseForm').style.display = 'none';
+                
+                await showDialog('Éxito', 'Gasto registrado exitosamente.', 'success');
+            });
+            
+            // Formulario de venta (acceso para admin y trabajador)
+            document.getElementById('saleForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Obtener datos del formulario
+                const productRef = document.getElementById('saleProductRef').value.trim().toUpperCase();
+                const quantity = parseInt(document.getElementById('saleQuantity').value);
+                const saleType = document.getElementById('saleType').value;
+                const discount = parseFloat(document.getElementById('discount').value) || 0;
+                const paymentMethod = document.getElementById('paymentMethod').value;
+                const deliveryType = document.getElementById('deliveryType').value;
+                const deliveryCost = parseFloat(document.getElementById('deliveryCost').value) || 0;
+                
+                // Validar datos del cliente (SIEMPRE REQUERIDOS)
+                const customerName = document.getElementById('customerName').value.trim();
+                const customerId = document.getElementById('customerId').value.trim();
+                const customerPhone = document.getElementById('customerPhone').value.trim();
+                const customerAddress = document.getElementById('customerAddress').value.trim();
+                const customerCity = document.getElementById('customerCity').value.trim();
+                
+                // Validar datos obligatorios del cliente
+                if (!customerName || !customerId || !customerPhone || !customerAddress || !customerCity) {
+                    await showDialog('Error', 'Por favor complete todos los datos obligatorios del cliente (*).', 'error');
+                    return;
+                }
+                
+                // Validar producto y cantidad
+                const products = JSON.parse(localStorage.getItem('destelloOroProducts'));
+                const product = products.find(p => p.id === productRef);
+                
+                if (!product) {
+                    await showDialog('Error', 'No se encontró un producto con esa referencia.', 'error');
+                    return;
+                }
+                
+                if (quantity > product.quantity) {
+                    await showDialog('Error', `No hay suficiente stock. Solo hay ${product.quantity} unidades disponibles.`, 'error');
+                    return;
+                }
+                
+                // Información del cliente (SIEMPRE REQUERIDA)
+                const customerInfo = {
+                    name: customerName,
+                    id: customerId,
+                    phone: customerPhone,
+                    email: document.getElementById('customerEmail').value.trim(),
+                    address: customerAddress,
+                    city: customerCity
+                };
+                
+                // Calcular precios
+                const unitPrice = saleType === 'retail' ? product.retailPrice : product.wholesalePrice;
+                const subtotal = unitPrice * quantity;
+                const discountAmount = subtotal * (discount / 100);
+                const total = subtotal - discountAmount + deliveryCost;
+                
+                // Generar ID de factura
+                let nextInvoiceId = parseInt(localStorage.getItem('destelloOroNextInvoiceId') || '1001');
+                const invoiceId = `FAC${nextInvoiceId.toString().padStart(4, '0')}`;
+                
+                // Crear objeto de venta
+                const sale = {
+                    id: invoiceId,
+                    productId: productRef,
+                    productName: product.name,
+                    quantity: quantity,
+                    saleType: saleType,
+                    unitPrice: unitPrice,
+                    subtotal: subtotal,
+                    discount: discountAmount,
+                    deliveryCost: deliveryCost,
+                    total: total,
+                    paymentMethod: paymentMethod,
+                    deliveryType: deliveryType,
+                    customerInfo: customerInfo,
+                    date: new Date().toISOString(),
+                    status: paymentMethod === 'cash' ? 'completed' : 'pending',
+                    confirmed: paymentMethod === 'cash',
+                    user: currentUser.username
+                };
+                
+                // Si el pago no es en efectivo, guardar como pendiente
+                if (paymentMethod !== 'cash') {
+                    const pendingSales = JSON.parse(localStorage.getItem('destelloOroPendingSales'));
+                    pendingSales.push(sale);
+                    localStorage.setItem('destelloOroPendingSales', JSON.stringify(pendingSales));
+                    
+                    // Actualizar tabla de pendientes
+                    loadPendingSalesTable();
+                    
+                    await showDialog(
+                        'Venta Pendiente', 
+                        'Venta registrada como pendiente de pago. El administrador debe confirmar el pago.',
+                        'warning'
+                    );
+                } else {
+                    // Si es efectivo, procesar inmediatamente
+                    const success = processSale(sale);
+                    
+                    if (success) {
+                        await showDialog('¡Venta Exitosa!', 'La venta ha sido procesada correctamente.', 'success');
+                        
+                        // Mostrar factura
+                        showInvoice(sale);
+                    } else {
+                        await showDialog('Error', 'Ocurrió un error al procesar la venta.', 'error');
+                    }
+                }
+                
+                // Limpiar formulario
+                this.reset();
+                updateSaleSummary();
+            });
+            
+            // Buscar producto al escribir referencia (venta)
+            document.getElementById('saleProductRef').addEventListener('input', function() {
+                const productRef = this.value.trim().toUpperCase();
+                if (productRef) {
+                    const products = JSON.parse(localStorage.getItem('destelloOroProducts'));
+                    const product = products.find(p => p.id === productRef);
+                    
+                    if (product) {
+                        const retailPrice = formatCurrency(product.retailPrice);
+                        const wholesalePrice = formatCurrency(product.wholesalePrice);
+                        document.getElementById('productInfo').innerHTML = 
+                            `<strong>${product.name}</strong><br>
+                             💰 Detal: ${retailPrice} | 📦 Mayorista: ${wholesalePrice}<br>
+                             📊 Stock disponible: ${product.quantity} unidades`;
+                    } else {
+                        document.getElementById('productInfo').innerHTML = '<span style="color: var(--danger);">❌ Producto no encontrado</span>';
+                    }
+                } else {
+                    document.getElementById('productInfo').textContent = '';
+                }
+                
+                // Actualizar resumen de venta
+                updateSaleSummary();
+            });
+            
+            // Actualizar resumen de venta al cambiar valores
+            ['saleQuantity', 'saleType', 'discount', 'deliveryCost'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateSaleSummary);
+            });
+            
+            // Limpiar formulario de venta
+            document.getElementById('clearSaleForm').addEventListener('click', async function() {
+                const confirmed = await showDialog(
+                    'Limpiar Formulario',
+                    '¿Está seguro de que desea limpiar el formulario de venta?',
+                    'question',
+                    true
+                );
+                
+                if (confirmed) {
+                    document.getElementById('saleForm').reset();
+                    updateSaleSummary();
+                }
+            });
+        }
+        
+        // Configurar eventos de la factura
+        function setupInvoiceEvents() {
+            // Cerrar factura
+            document.getElementById('closeInvoice').addEventListener('click', function() {
+                document.getElementById('invoiceModal').style.display = 'none';
+            });
+            
+            // Imprimir factura
+            document.getElementById('printInvoice').addEventListener('click', function() {
+                window.print();
+            });
+            
+            // Descargar factura como PDF
+            document.getElementById('downloadInvoice').addEventListener('click', async function() {
+                await generateInvoicePDF();
+            });
+            
+            // Compartir factura por WhatsApp
+            document.getElementById('shareInvoice').addEventListener('click', function() {
+                const invoiceNumber = document.getElementById('invoiceNumber').textContent;
+                const invoiceDate = document.getElementById('invoiceDate').textContent;
+                const customerName = document.getElementById('invoiceCustomerName').textContent;
+                const total = document.getElementById('invoiceTotal').textContent;
+                
+                // Crear mensaje para WhatsApp
+                const message = `*FACTURA DESTELLO DE ORO 18K*\n\n` +
+                               `${invoiceNumber}\n` +
+                               `${invoiceDate}\n\n` +
+                               `*Cliente:* ${customerName}\n` +
+                               `*Total:* ${total}\n\n` +
+                               `¡Gracias por su compra!\n` +
+                               `Visite nuestras redes sociales:\n` +
+                               `Instagram: ${socialMediaUrls.instagram}\n` +
+                               `WhatsApp: ${socialMediaUrls.whatsapp}\n` +
+                               `Web: ${socialMediaUrls.website}`;
+                
+                // Codificar el mensaje para URL
+                const encodedMessage = encodeURIComponent(message);
+                
+                // Crear enlace de WhatsApp
+                const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+                
+                // Abrir en nueva pestaña
+                window.open(whatsappUrl, '_blank');
+            });
+        }
+        
+        // Función para generar PDF de la factura (FACTURA COMPLETA)
+        async function generateInvoicePDF(saleData = null) {
+            // Si no se proporciona saleData, usar la factura actual
+            if (!saleData) {
+                await generateCurrentInvoicePDF();
+                return;
+            }
+            
+            // Mostrar mensaje de carga
+            await showDialog('Generando PDF', 'Por favor espere mientras se genera el PDF de la factura...', 'info');
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                // Configuración
+                const pageWidth = 210;
+                const margin = 15;
+                const lineHeight = 7;
+                let yPosition = margin;
+                
+                // Función para agregar texto con manejo de salto de página
+                function addText(text, fontSize = 12, isBold = false, align = 'left', newLine = true) {
+                    if (yPosition > 280) {
+                        pdf.addPage();
+                        yPosition = margin;
+                    }
+                    
+                    pdf.setFontSize(fontSize);
+                    pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
+                    
+                    const textWidth = pdf.getStringUnitWidth(text) * fontSize / pdf.internal.scaleFactor;
+                    let xPosition = margin;
+                    
+                    if (align === 'center') {
+                        xPosition = (pageWidth - textWidth) / 2;
+                    } else if (align === 'right') {
+                        xPosition = pageWidth - margin - textWidth;
+                    }
+                    
+                    pdf.text(text, xPosition, yPosition);
+                    
+                    if (newLine) {
+                        yPosition += lineHeight * (fontSize / 12);
+                    }
+                }
+                
+                // Encabezado
+                pdf.setTextColor(212, 175, 55); // Color oro
+                addText('DESTELLO DE ORO 18K', 20, true, 'center');
+                pdf.setTextColor(0, 0, 0);
+                addText('Tienda de Oro Laminado', 14, false, 'center');
+                addText('Contacto: 3182687488', 10, false, 'center');
+                yPosition += 10;
+                
+                // Información de la factura
+                addText(`FACTURA DE VENTA: ${saleData.id}`, 14, true);
+                addText(`Fecha: ${formatDate(saleData.date).split(',')[0]}`, 10);
+                addText(`Método de Pago: ${getPaymentMethodName(saleData.paymentMethod)}`, 10);
+                yPosition += 5;
+                
+                // Línea divisoria
+                pdf.setDrawColor(212, 175, 55);
+                pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+                yPosition += 10;
+                
+                // Datos del cliente
+                addText('DATOS DEL CLIENTE:', 12, true);
+                addText(`Nombre: ${saleData.customerInfo.name}`, 10);
+                addText(`Cédula: ${saleData.customerInfo.id}`, 10);
+                addText(`Teléfono: ${saleData.customerInfo.phone}`, 10);
+                addText(`Dirección: ${saleData.customerInfo.address}`, 10);
+                addText(`Ciudad: ${saleData.customerInfo.city}`, 10);
+                if (saleData.customerInfo.email) {
+                    addText(`Email: ${saleData.customerInfo.email}`, 10);
+                }
+                yPosition += 10;
+                
+                // Detalles de la compra
+                addText('DETALLES DE LA COMPRA:', 12, true);
+                yPosition += 5;
+                
+                // Encabezados de tabla
+                const colWidths = [80, 20, 20, 30, 30];
+                let xPos = margin;
+                
+                // Encabezados
+                const headers = ['Descripción', 'Cant', 'Precio', 'Total'];
+                headers.forEach((header, i) => {
+                    pdf.setFontSize(10);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text(header, xPos, yPosition);
+                    xPos += colWidths[i];
+                });
+                yPosition += 5;
+                
+                // Línea bajo encabezados
+                pdf.setDrawColor(150, 150, 150);
+                pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+                yPosition += 5;
+                
+                // Producto
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'normal');
+                xPos = margin;
+                pdf.text(saleData.productName, xPos, yPosition);
+                xPos += colWidths[0];
+                pdf.text(saleData.quantity.toString(), xPos, yPosition);
+                xPos += colWidths[1];
+                pdf.text(formatCurrency(saleData.unitPrice), xPos, yPosition);
+                xPos += colWidths[2];
+                pdf.text(formatCurrency(saleData.subtotal), xPos, yPosition);
+                yPosition += 7;
+                
+                // Descuento si aplica
+                if (saleData.discount > 0) {
+                    xPos = margin + colWidths[0] + colWidths[1] + colWidths[2];
+                    pdf.setTextColor(220, 20, 60); // Rojo para descuento
+                    pdf.text(`Descuento: -${formatCurrency(saleData.discount)}`, xPos, yPosition);
+                    pdf.setTextColor(0, 0, 0);
+                    yPosition += 7;
+                }
+                
+                // Costo de envío si aplica
+                if (saleData.deliveryCost > 0) {
+                    xPos = margin + colWidths[0] + colWidths[1] + colWidths[2];
+                    pdf.setTextColor(65, 105, 225); // Azul para envío
+                    pdf.text(`Envío: ${formatCurrency(saleData.deliveryCost)}`, xPos, yPosition);
+                    pdf.setTextColor(0, 0, 0);
+                    yPosition += 7;
+                }
+                
+                // Línea divisoria antes del total
+                pdf.setDrawColor(150, 150, 150);
+                pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+                yPosition += 10;
+                
+                // Total
+                pdf.setFontSize(16);
+                pdf.setFont('helvetica', 'bold');
+                pdf.setTextColor(212, 175, 55);
+                const totalText = `TOTAL: ${formatCurrency(saleData.total)}`;
+                const totalWidth = pdf.getStringUnitWidth(totalText) * 16 / pdf.internal.scaleFactor;
+                pdf.text(totalText, pageWidth - margin - totalWidth, yPosition);
+                yPosition += 15;
+                
+                // Garantía
+                pdf.setTextColor(0, 0, 0);
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'bold');
+                addText('GARANTÍA DE TU JOYA:', 11, true);
+                pdf.setFont('helvetica', 'normal');
+                
+                const warrantyText = [
+                    'Tu joya cuenta con 12 meses de garantía por cambio de color desde la fecha de compra.',
+                    'Esta garantía no cubre daños por mal uso, como cadenas rotas, rayones, modificaciones o piezas incompletas.',
+                    'En caso de aplicar la garantía, tu joya será reemplazada por una nueva (sin opción de reembolso).',
+                    'Si recibes tu joya en mal estado, repórtalo dentro de los 3 días hábiles posteriores a la entrega para gestionar el cambio.',
+                    'IMPORTANTE: Si tu joya presenta un cambio de tonalidad dentro del tiempo establecido, deberás cubrir el costo del envío hacia nuestras instalaciones, y nosotros asumimos el costo del envío de regreso.'
+                ];
+                
+                warrantyText.forEach(text => {
+                    // Dividir texto largo en líneas
+                    const maxWidth = pageWidth - 2 * margin;
+                    const lines = pdf.splitTextToSize(text, maxWidth);
+                    lines.forEach(line => {
+                        addText(line, 9);
+                    });
+                    yPosition += 2;
+                });
+                
+                yPosition += 10;
+                
+                // Información de contacto
+                pdf.setFontSize(10);
+                addText('¡Gracias por tu compra!', 11, true, 'center');
+                addText('Tu satisfacción es nuestro mayor compromiso.', 10, false, 'center');
+                yPosition += 5;
+                addText('Para consultas o garantías, contacta al: 3182687488', 10, false, 'center');
+                yPosition += 5;
+                addText('"En Destello de Oro 18K, cada pieza cuenta una historia de elegancia"', 9, true, 'center');
+                yPosition += 5;
+                addText('Instagram: @destellodeoro18k', 9, false, 'center');
+                addText('WhatsApp: 3182687488', 9, false, 'center');
+                addText('Página web: destellodeoro18k.com', 9, false, 'center');
+                
+                // Guardar PDF
+                pdf.save(`Factura_${saleData.id}.pdf`);
+                
+                await showDialog('PDF Generado', 'La factura se ha descargado exitosamente.', 'success');
+                
+            } catch (error) {
+                console.error('Error generando PDF:', error);
+                await showDialog('Error', 'No se pudo generar el PDF. Intente usar la opción de imprimir.', 'error');
+            }
+        }
+        
+        // Función para generar PDF de la factura actual (del modal)
+        async function generateCurrentInvoicePDF() {
+            await showDialog('Generando PDF', 'Por favor espere mientras se genera el PDF de la factura...', 'info');
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                // Obtener datos de la factura actual del modal
+                const invoiceNumber = document.getElementById('invoiceNumber').textContent;
+                const invoiceDate = document.getElementById('invoiceDate').textContent;
+                const customerName = document.getElementById('invoiceCustomerName').textContent;
+                const total = document.getElementById('invoiceTotal').textContent;
+                
+                // Agregar contenido básico al PDF
+                pdf.setFontSize(20);
+                pdf.setTextColor(212, 175, 55); // Color oro
+                pdf.text('Destello de Oro 18K', 20, 20);
+                
+                pdf.setFontSize(12);
+                pdf.setTextColor(0, 0, 0);
+                pdf.text('Factura de Venta', 20, 30);
+                pdf.text(invoiceNumber, 20, 40);
+                pdf.text(invoiceDate, 20, 45);
+                
+                pdf.setFontSize(14);
+                pdf.text('Datos del Cliente:', 20, 60);
+                pdf.setFontSize(10);
+                pdf.text(`Nombre: ${customerName}`, 20, 70);
+                
+                pdf.setFontSize(14);
+                pdf.text('Total:', 20, 85);
+                pdf.setFontSize(16);
+                pdf.setTextColor(212, 175, 55);
+                pdf.text(total, 60, 85);
+                
+                pdf.setFontSize(10);
+                pdf.setTextColor(100, 100, 100);
+                pdf.text('Gracias por su compra!', 20, 100);
+                pdf.text('Contacto: 3182687488', 20, 105);
+                
+                // Guardar PDF
+                pdf.save(`Factura_${invoiceNumber.replace('Factura ', '')}.pdf`);
+                
+                await showDialog('PDF Generado', 'La factura se ha descargado exitosamente.', 'success');
+                
+            } catch (error) {
+                console.error('Error generando PDF:', error);
+                await showDialog('Error', 'No se pudo generar el PDF. Intente usar la opción de imprimir.', 'error');
+            }
+        }
+        
+        // Configurar selectores de fecha para historial
+        function setupDateSelectors() {
+            const monthSelect = document.getElementById('monthSelect');
+            const yearSelect = document.getElementById('yearSelect');
+            
+            // Limpiar selectores
+            monthSelect.innerHTML = '';
+            yearSelect.innerHTML = '';
+            
+            // Agregar meses
+            const monthNames = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+            
+            monthNames.forEach((month, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = month;
+                if (index === currentMonth) {
+                    option.selected = true;
+                }
+                monthSelect.appendChild(option);
+            });
+            
+            // Agregar años (desde 2026 hasta 2030)
+            for (let year = 2026; year <= 2030; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                if (year === currentYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+            
+            // Agregar eventos
+            monthSelect.addEventListener('change', function() {
+                currentMonth = parseInt(this.value);
+                loadHistoryData();
+            });
+            
+            yearSelect.addEventListener('change', function() {
+                currentYear = parseInt(this.value);
+                loadHistoryData();
+            });
+        }
+        
+        // Calcular ganancia estimada
+        function calculateProfit() {
+            const purchasePrice = parseFloat(document.getElementById('purchasePrice').value) || 0;
+            const retailPrice = parseFloat(document.getElementById('retailPrice').value) || 0;
+            
+            if (purchasePrice > 0 && retailPrice > 0) {
+                const profit = retailPrice - purchasePrice;
+                const profitPercentage = (profit / purchasePrice * 100).toFixed(2);
+                document.getElementById('profitEstimate').value = 
+                    `${formatCurrency(profit)} (${profitPercentage}%)`;
+            } else {
+                document.getElementById('profitEstimate').value = '';
+            }
+        }
+        
+        // Actualizar resumen de venta
+        function updateSaleSummary() {
+            const productRef = document.getElementById('saleProductRef').value.trim().toUpperCase();
+            const quantity = parseInt(document.getElementById('saleQuantity').value) || 0;
+            const saleType = document.getElementById('saleType').value;
+            const discount = parseFloat(document.getElementById('discount').value) || 0;
+            const deliveryCost = parseFloat(document.getElementById('deliveryCost').value) || 0;
+            
+            // Buscar producto
+            const products = JSON.parse(localStorage.getItem('destelloOroProducts'));
+            const product = products.find(p => p.id === productRef);
+            
+            if (product && quantity > 0) {
+                // Calcular precios
+                const unitPrice = saleType === 'retail' ? product.retailPrice : product.wholesalePrice;
+                const subtotal = unitPrice * quantity;
+                const discountAmount = subtotal * (discount / 100);
+                const total = subtotal - discountAmount + deliveryCost;
+                
+                // Actualizar UI
+                document.getElementById('subtotalAmount').textContent = formatCurrency(subtotal);
+                document.getElementById('discountAmount').textContent = formatCurrency(discountAmount);
+                document.getElementById('deliveryAmount').textContent = formatCurrency(deliveryCost);
+                document.getElementById('totalAmount').textContent = formatCurrency(total);
+            } else {
+                // Resetear valores
+                document.getElementById('subtotalAmount').textContent = formatCurrency(0);
+                document.getElementById('discountAmount').textContent = formatCurrency(0);
+                document.getElementById('deliveryAmount').textContent = formatCurrency(0);
+                document.getElementById('totalAmount').textContent = formatCurrency(0);
+            }
+        }
+        
+        // Procesar una venta
+        function processSale(sale) {
+            // Actualizar inventario
+            const products = JSON.parse(localStorage.getItem('destelloOroProducts'));
+            const productIndex = products.findIndex(p => p.id === sale.productId);
+            
+            if (productIndex !== -1) {
+                products[productIndex].quantity -= sale.quantity;
+                localStorage.setItem('destelloOroProducts', JSON.stringify(products));
+                
+                // Guardar venta en historial
+                const sales = JSON.parse(localStorage.getItem('destelloOroSales'));
+                sales.push(sale);
+                localStorage.setItem('destelloOroSales', JSON.stringify(sales));
+                
+                // Actualizar número de factura
+                let nextInvoiceId = parseInt(localStorage.getItem('destelloOroNextInvoiceId') || '1001');
+                localStorage.setItem('destelloOroNextInvoiceId', (nextInvoiceId + 1).toString());
+                
+                // Actualizar tablas
+                loadInventoryTable();
+                loadHistoryData();
+                
+                return true;
+            }
+            
+            return false;
+        }
+        
+        // NUEVO: Función para generar QR Code (100% FUNCIONAL)
+        function generateQRCode() {
+            const qrContainer = document.getElementById('qrCodeCanvas');
+            qrContainer.innerHTML = ''; // Limpiar contenido previo
+            
+            // Crear contenido para el QR
+            const qrContent = `
+Destello de Oro 18K
+Tienda de Oro Laminado
+
+📱 CONTACTO Y REDES SOCIALES 📱
+
+Instagram: ${socialMediaUrls.instagram}
+WhatsApp: ${socialMediaUrls.whatsapp}
+Página Web: ${socialMediaUrls.website}
+
+Teléfono: 3182687488
+
+¡Gracias por tu compra!
+            `;
+            
+            // Generar QR Code usando la librería
+            try {
+                // Crear elemento canvas para el QR
+                const canvas = document.createElement('canvas');
+                canvas.id = 'qrCanvas';
+                canvas.width = 180;
+                canvas.height = 180;
+                canvas.style.border = '2px solid #333';
+                canvas.style.padding = '5px';
+                canvas.style.backgroundColor = '#FFFFFF';
+                
+                // Usar la librería QRCode para generar el código
+                QRCode.toCanvas(canvas, qrContent, {
+                    width: 180,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    },
+                    errorCorrectionLevel: 'M'
+                }, function(error) {
+                    if (error) {
+                        console.error('Error generando QR:', error);
+                        createFallbackQR();
+                    } else {
+                        qrContainer.appendChild(canvas);
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error:', error);
+                createFallbackQR();
+            }
+            
+            // Función de respaldo si falla la generación del QR
+            function createFallbackQR() {
+                const fallbackDiv = document.createElement('div');
+                fallbackDiv.style.width = '180px';
+                fallbackDiv.style.height = '180px';
+                fallbackDiv.style.backgroundColor = '#FFFFFF';
+                fallbackDiv.style.border = '2px solid #333';
+                fallbackDiv.style.display = 'flex';
+                fallbackDiv.style.alignItems = 'center';
+                fallbackDiv.style.justifyContent = 'center';
+                fallbackDiv.style.flexDirection = 'column';
+                fallbackDiv.style.padding = '10px';
+                
+                fallbackDiv.innerHTML = `
+                    <div style="text-align: center; font-size: 12px;">
+                        <div style="font-weight: bold; margin-bottom: 5px;">Destello de Oro 18K</div>
+                        <div style="margin-bottom: 3px;">📱 Instagram:</div>
+                        <div style="font-size: 10px;">${socialMediaUrls.instagram}</div>
+                        <div style="margin-top: 5px; margin-bottom: 3px;">📱 WhatsApp:</div>
+                        <div style="font-size: 10px;">${socialMediaUrls.whatsapp}</div>
+                    </div>
+                `;
+                
+                qrContainer.appendChild(fallbackDiv);
+            }
+        }
+        
+        // Mostrar factura con QR 100% funcional
+        function showInvoice(sale) {
+            // Configurar datos de la factura
+            document.getElementById('invoiceNumber').textContent = `Factura ${sale.id}`;
+            document.getElementById('invoiceDate').textContent = `Fecha: ${formatDate(sale.date)}`;
+            document.getElementById('invoicePaymentMethod').textContent = 
+                `Método de Pago: ${getPaymentMethodName(sale.paymentMethod)}`;
+            
+            // Información del cliente (SIEMPRE DISPONIBLE)
+            if (sale.customerInfo) {
+                document.getElementById('invoiceCustomerName').textContent = sale.customerInfo.name;
+                document.getElementById('invoiceCustomerId').textContent = sale.customerInfo.id || 'No proporcionada';
+                document.getElementById('invoiceCustomerPhone').textContent = sale.customerInfo.phone;
+                document.getElementById('invoiceCustomerEmail').textContent = sale.customerInfo.email || 'No proporcionado';
+                document.getElementById('invoiceCustomerAddress').textContent = sale.customerInfo.address;
+                document.getElementById('invoiceCustomerCity').textContent = sale.customerInfo.city;
+            } else {
+                document.getElementById('invoiceCustomerName').textContent = 'Cliente de mostrador';
+                document.getElementById('invoiceCustomerId').textContent = 'No proporcionada';
+                document.getElementById('invoiceCustomerPhone').textContent = 'No proporcionado';
+                document.getElementById('invoiceCustomerEmail').textContent = 'No proporcionado';
+                document.getElementById('invoiceCustomerAddress').textContent = 'Recoge en tienda';
+                document.getElementById('invoiceCustomerCity').textContent = 'No proporcionada';
+            }
+            
+            // Detalles de la venta
+            const invoiceItemsBody = document.getElementById('invoiceItemsBody');
+            invoiceItemsBody.innerHTML = `
+                <tr>
+                    <td><strong>${sale.productName}</strong></td>
+                    <td>${sale.productId}</td>
+                    <td>${sale.quantity}</td>
+                    <td>${formatCurrency(sale.unitPrice)}</td>
+                    <td><strong>${formatCurrency(sale.subtotal)}</strong></td>
+                </tr>
+                ${sale.discount > 0 ? `
+                <tr>
+                    <td colspan="4" style="text-align: right; color: var(--danger);">Descuento:</td>
+                    <td style="color: var(--danger);">-${formatCurrency(sale.discount)}</td>
+                </tr>
+                ` : ''}
+                ${sale.deliveryCost > 0 ? `
+                <tr>
+                    <td colspan="4" style="text-align: right; color: var(--info);">Costo de envío:</td>
+                    <td style="color: var(--info);">${formatCurrency(sale.deliveryCost)}</td>
+                </tr>
+                ` : ''}
+            `;
+            
+            // Total
+            document.getElementById('invoiceTotal').textContent = formatCurrency(sale.total);
+            
+            // GENERAR QR CODE FUNCIONAL
+            setTimeout(() => {
+                generateQRCode();
+            }, 100);
+            
+            // Mostrar modal
+            document.getElementById('invoiceModal').style.display = 'block';
+        }
+        
+        // Cargar tabla de inventario - VERSIÓN MODIFICADA PARA TRABAJADOR
+        function loadInventoryTable() {
+            const products = JSON.parse(localStorage.getItem('destelloOroProducts'));
+            const tableBody = document.getElementById('inventoryTableBody');
+            
+            tableBody.innerHTML = '';
+            
+            products.forEach(product => {
+                const profit = product.retailPrice - product.purchasePrice;
+                const profitPercentage = (profit / product.purchasePrice * 100).toFixed(2);
+                const row = document.createElement('tr');
+                
+                // Determinar si mostrar botón de eliminar (solo para admin)
+                const deleteButton = currentUser && currentUser.role === 'admin' ? 
+                    `<button class="btn btn-danger btn-sm" onclick="deleteProduct('${product.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>` : 
+                    '';
+                
+                row.innerHTML = `
+                    <td><strong>${product.id}</strong></td>
+                    <td>${product.name}</td>
+                    <td>
+                        <span class="badge ${product.quantity > 10 ? 'badge-success' : product.quantity > 0 ? 'badge-warning' : 'badge-danger'}">
+                            ${product.quantity} unidades
+                        </span>
+                    </td>
+                    <td>${formatCurrency(product.purchasePrice)}</td>
+                    <td>${formatCurrency(product.wholesalePrice)}</td>
+                    <td>${formatCurrency(product.retailPrice)}</td>
+                    <td>
+                        ${formatCurrency(profit)}<br>
+                        <small>(${profitPercentage}%)</small>
+                    </td>
+                    <td>${product.supplier}</td>
+                    <td class="admin-only">
+                        ${deleteButton}
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Ocultar columna de acciones si es trabajador
+            const actionCells = tableBody.querySelectorAll('td:nth-child(9)');
+            if (currentUser && currentUser.role === 'worker') {
+                actionCells.forEach(cell => {
+                    cell.style.display = 'none';
+                });
+                
+                // También ocultar el encabezado de acciones
+                const actionHeader = document.querySelector('#inventoryTable th:nth-child(9)');
+                if (actionHeader) {
+                    actionHeader.style.display = 'none';
+                }
+            } else {
+                // Mostrar columna de acciones si es admin
+                actionCells.forEach(cell => {
+                    cell.style.display = '';
+                });
+                
+                const actionHeader = document.querySelector('#inventoryTable th:nth-child(9)');
+                if (actionHeader) {
+                    actionHeader.style.display = '';
+                }
+            }
+        }
+        
+        // Cargar tabla de gastos
+        function loadExpensesTable() {
+            const expenses = JSON.parse(localStorage.getItem('destelloOroExpenses'));
+            const tableBody = document.getElementById('expensesTableBody');
+            
+            tableBody.innerHTML = '';
+            
+            // Ordenar por fecha (más reciente primero)
+            expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            expenses.forEach(expense => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${formatDate(expense.date)}</td>
+                    <td>${expense.description}</td>
+                    <td><strong>${formatCurrency(expense.amount)}</strong></td>
+                    <td>
+                        <span class="badge ${expense.user === 'admin' ? 'badge-admin' : 'badge-worker'}">
+                            ${getUserName(expense.user)}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="deleteExpense('${expense.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Cargar tabla de ventas pendientes
+        function loadPendingSalesTable() {
+            const pendingSales = JSON.parse(localStorage.getItem('destelloOroPendingSales'));
+            const tableBody = document.getElementById('pendingTableBody');
+            
+            tableBody.innerHTML = '';
+            
+            pendingSales.forEach(sale => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td><strong>${sale.id}</strong></td>
+                    <td>${sale.customerInfo ? sale.customerInfo.name : 'Cliente de mostrador'}</td>
+                    <td>${sale.productName}</td>
+                    <td><strong>${formatCurrency(sale.total)}</strong></td>
+                    <td><span class="badge ${paymentMethods[sale.paymentMethod]?.class || 'badge-warning'}">${getPaymentMethodName(sale.paymentMethod)}</span></td>
+                    <td>${formatDate(sale.date)}</td>
+                    <td>
+                        <span class="badge ${sale.user === 'admin' ? 'badge-admin' : 'badge-worker'}">
+                            ${getUserName(sale.user)}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-success btn-sm" onclick="confirmPayment('${sale.id}')" style="margin-right: 5px;">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="cancelPendingSale('${sale.id}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Cargar datos del historial - VERSIÓN MODIFICADA CON BOTÓN DE PDF
+        function loadHistoryData() {
+            const monthSelect = document.getElementById('monthSelect');
+            const yearSelect = document.getElementById('yearSelect');
+            const selectedMonth = monthSelect ? parseInt(monthSelect.value) : currentMonth;
+            const selectedYear = yearSelect ? parseInt(yearSelect.value) : currentYear;
+            
+            // Calcular fecha de inicio y fin del mes
+            const startDate = new Date(selectedYear, selectedMonth, 1);
+            const endDate = new Date(selectedYear, selectedMonth + 1, 0);
+            
+            // Obtener todos los datos
+            const products = JSON.parse(localStorage.getItem('destelloOroProducts'));
+            const sales = JSON.parse(localStorage.getItem('destelloOroSales'));
+            const expenses = JSON.parse(localStorage.getItem('destelloOroExpenses'));
+            const restocks = JSON.parse(localStorage.getItem('destelloOroRestocks'));
+            
+            // Filtrar por mes seleccionado
+            const monthlySales = sales.filter(sale => {
+                const saleDate = new Date(sale.date);
+                return saleDate >= startDate && saleDate <= endDate && sale.confirmed;
+            });
+            
+            const monthlyExpenses = expenses.filter(expense => {
+                const expenseDate = new Date(expense.date);
+                return expenseDate >= startDate && expenseDate <= endDate;
+            });
+            
+            const monthlyRestocks = restocks.filter(restock => {
+                const restockDate = new Date(restock.date);
+                return restockDate >= startDate && restockDate <= endDate;
+            });
+            
+            // Calcular totales
+            const totalSales = monthlySales.reduce((sum, sale) => sum + sale.total, 0);
+            const totalExpenses = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const totalRestocks = monthlyRestocks.reduce((sum, restock) => sum + restock.totalValue, 0);
+            const netProfit = totalSales - totalExpenses - totalRestocks;
+            
+            // Actualizar resumen mensual
+            const monthlySummary = document.getElementById('monthlySummary');
+            monthlySummary.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-value">${formatCurrency(totalSales)}</div>
+                    <div class="stat-label">Ventas Totales</div>
+                    <small>${monthlySales.length} ventas confirmadas</small>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="stat-value">${formatCurrency(totalExpenses)}</div>
+                    <div class="stat-label">Gastos Totales</div>
+                    <small>${monthlyExpenses.length} gastos registrados</small>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div class="stat-value">${formatCurrency(totalRestocks)}</div>
+                    <div class="stat-label">Inventario Surtido</div>
+                    <small>${monthlyRestocks.length} surtidos realizados</small>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="stat-value">${formatCurrency(netProfit)}</div>
+                    <div class="stat-label">Ganancia Neta</div>
+                    <small>Ventas - Gastos - Surtidos</small>
+                </div>
+            `;
+            
+            // Actualizar tabla de historial
+            const historyTableBody = document.getElementById('historyTableBody');
+            historyTableBody.innerHTML = '';
+            
+            // Combinar todos los movimientos
+            const allMovements = [
+                ...monthlySales.map(s => ({ ...s, type: 'venta', icon: 'fa-shopping-cart', color: 'success', isSale: true })),
+                ...monthlyExpenses.map(e => ({ ...e, type: 'gasto', icon: 'fa-file-invoice-dollar', color: 'danger', isSale: false })),
+                ...monthlyRestocks.map(r => ({ ...r, type: 'surtido', icon: 'fa-truck-loading', color: 'warning', isSale: false }))
+            ];
+            
+            // Ordenar por fecha (más reciente primero)
+            allMovements.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Agregar a la tabla
+            allMovements.forEach(movement => {
+                const row = document.createElement('tr');
+                
+                let description = '';
+                let quantity = '';
+                let value = '';
+                
+                if (movement.type === 'venta') {
+                    description = `${movement.productName} (${movement.quantity} unidades)`;
+                    quantity = movement.quantity;
+                    value = movement.total;
+                } else if (movement.type === 'gasto') {
+                    description = movement.description;
+                    quantity = '1';
+                    value = movement.amount;
+                } else if (movement.type === 'surtido') {
+                    description = `${movement.productName} (${movement.quantity} unidades)`;
+                    quantity = movement.quantity;
+                    value = movement.totalValue;
+                }
+                
+                // Determinar si mostrar botón de PDF (solo para ventas y solo para admin)
+                const pdfButton = (currentUser && currentUser.role === 'admin' && movement.isSale) ? 
+                    `<button class="btn btn-info btn-sm" onclick="downloadSalePDF('${movement.id}')" title="Descargar factura en PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </button>` : 
+                    '';
+                
+                row.innerHTML = `
+                    <td>${formatDate(movement.date)}</td>
+                    <td>
+                        <span class="badge badge-${movement.color}">
+                            <i class="fas ${movement.icon}"></i> ${movement.type.charAt(0).toUpperCase() + movement.type.slice(1)}
+                        </span>
+                    </td>
+                    <td>${description}</td>
+                    <td>
+                        <span class="badge ${movement.user === 'admin' ? 'badge-admin' : 'badge-worker'}">
+                            ${getUserName(movement.user)}
+                        </span>
+                    </td>
+                    <td>${quantity}</td>
+                    <td><strong>${formatCurrency(value)}</strong></td>
+                    <td class="admin-only">
+                        ${pdfButton}
+                    </td>
+                `;
+                
+                historyTableBody.appendChild(row);
+            });
+            
+            // Ocultar columna de acciones si es trabajador
+            const actionCells = historyTableBody.querySelectorAll('td:nth-child(7)');
+            if (currentUser && currentUser.role === 'worker') {
+                actionCells.forEach(cell => {
+                    cell.style.display = 'none';
+                });
+                
+                // También ocultar el encabezado de acciones
+                const actionHeader = document.querySelector('#historyTable th:nth-child(7)');
+                if (actionHeader) {
+                    actionHeader.style.display = 'none';
+                }
+            } else {
+                // Mostrar columna de acciones si es admin
+                actionCells.forEach(cell => {
+                    cell.style.display = '';
+                });
+                
+                const actionHeader = document.querySelector('#historyTable th:nth-child(7)');
+                if (actionHeader) {
+                    actionHeader.style.display = '';
+                }
+            }
+        }
+        
+        // Funciones auxiliares globales
+        window.deleteProduct = async function(productId) {
+            // Verificar si es administrador
+            if (currentUser && currentUser.role !== 'admin') {
+                await showDialog('Acceso Restringido', 'Solo el administrador puede eliminar productos.', 'error');
+                return;
+            }
+            
+            const confirmed = await showDialog(
+                'Eliminar Producto',
+                '¿Está seguro de que desea eliminar este producto? Esta acción no se puede deshacer.',
+                'warning',
+                true
+            );
+            
+            if (confirmed) {
+                const products = JSON.parse(localStorage.getItem('destelloOroProducts'));
+                const updatedProducts = products.filter(p => p.id !== productId);
+                localStorage.setItem('destelloOroProducts', JSON.stringify(updatedProducts));
+                loadInventoryTable();
+                await showDialog('Éxito', 'Producto eliminado correctamente.', 'success');
+            }
+        };
+        
+        window.deleteExpense = async function(expenseId) {
+            // Verificar si es administrador
+            if (currentUser && currentUser.role !== 'admin') {
+                await showDialog('Acceso Restringido', 'Solo el administrador puede eliminar gastos.', 'error');
+                return;
+            }
+            
+            const confirmed = await showDialog(
+                'Eliminar Gasto',
+                '¿Está seguro de que desea eliminar este gasto? Esta acción no se puede deshacer.',
+                'warning',
+                true
+            );
+            
+            if (confirmed) {
+                const expenses = JSON.parse(localStorage.getItem('destelloOroExpenses'));
+                const updatedExpenses = expenses.filter(e => e.id !== expenseId);
+                localStorage.setItem('destelloOroExpenses', JSON.stringify(updatedExpenses));
+                loadExpensesTable();
+                loadHistoryData();
+                await showDialog('Éxito', 'Gasto eliminado correctamente.', 'success');
+            }
+        };
+        
+        window.confirmPayment = async function(saleId) {
+            // Verificar si es administrador
+            if (currentUser && currentUser.role !== 'admin') {
+                await showDialog('Acceso Restringido', 'Solo el administrador puede confirmar pagos pendientes.', 'error');
+                return;
+            }
+            
+            const confirmed = await showDialog(
+                'Confirmar Pago',
+                '¿Confirmar que se recibió el pago de esta venta?',
+                'question',
+                true
+            );
+            
+            if (confirmed) {
+                const pendingSales = JSON.parse(localStorage.getItem('destelloOroPendingSales'));
+                const saleIndex = pendingSales.findIndex(s => s.id === saleId);
+                
+                if (saleIndex !== -1) {
+                    const sale = pendingSales[saleIndex];
+                    sale.confirmed = true;
+                    sale.status = 'completed';
+                    
+                    // Procesar venta
+                    if (processSale(sale)) {
+                        // Eliminar de pendientes
+                        pendingSales.splice(saleIndex, 1);
+                        localStorage.setItem('destelloOroPendingSales', JSON.stringify(pendingSales));
+                        
+                        // Actualizar tablas
+                        loadPendingSalesTable();
+                        
+                        await showDialog('Éxito', 'Pago confirmado y venta procesada exitosamente.', 'success');
+                    } else {
+                        await showDialog('Error', 'Error al procesar la venta.', 'error');
+                    }
+                }
+            }
+        };
+        
+        window.cancelPendingSale = async function(saleId) {
+            // Verificar si es administrador
+            if (currentUser && currentUser.role !== 'admin') {
+                await showDialog('Acceso Restringido', 'Solo el administrador puede cancelar ventas pendientes.', 'error');
+                return;
+            }
+            
+            const confirmed = await showDialog(
+                'Cancelar Venta Pendiente',
+                '¿Cancelar esta venta pendiente? Esta acción no se puede deshacer.',
+                'warning',
+                true
+            );
+            
+            if (confirmed) {
+                const pendingSales = JSON.parse(localStorage.getItem('destelloOroPendingSales'));
+                const updatedSales = pendingSales.filter(s => s.id !== saleId);
+                localStorage.setItem('destelloOroPendingSales', JSON.stringify(updatedSales));
+                loadPendingSalesTable();
+                await showDialog('Éxito', 'Venta pendiente cancelada correctamente.', 'success');
+            }
+        };
+        
+        // NUEVA FUNCIÓN: Descargar PDF de venta desde historial
+        window.downloadSalePDF = async function(saleId) {
+            // Verificar si es administrador
+            if (currentUser && currentUser.role !== 'admin') {
+                await showDialog('Acceso Restringido', 'Solo el administrador puede descargar facturas.', 'error');
+                return;
+            }
+            
+            // Buscar la venta en el historial
+            const sales = JSON.parse(localStorage.getItem('destelloOroSales'));
+            const sale = sales.find(s => s.id === saleId);
+            
+            if (sale) {
+                await generateInvoicePDF(sale);
+            } else {
+                await showDialog('Error', 'No se encontró la venta solicitada.', 'error');
+            }
+        };
+        
+        // Función para obtener nombre de usuario - VERSIÓN CORREGIDA
+        function getUserName(username) {
+            // Si es el usuario actual, usar su información
+            if (currentUser && currentUser.username === username) {
+                return currentUser.displayName || currentUser.name || username;
+            }
+            
+            // Buscar en la lista de usuarios
+            try {
+                const users = JSON.parse(localStorage.getItem('destelloOroUsers'));
+                if (users) {
+                    const user = users.find(u => u.username === username);
+                    if (user) {
+                        if (user.name && user.lastName) {
+                            return `${user.name} ${user.lastName}`;
+                        } else if (user.name) {
+                            return user.name;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error al obtener nombre de usuario:', error);
+            }
+            
+            return username;
+        }
+        
+        // Funciones de utilidad
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-CO', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function getPaymentMethodName(method) {
+            return paymentMethods[method]?.name || method;
+        }
+        
+        // Función para limpiar datos corruptos (ejecutar en consola si es necesario)
+        window.resetUserData = function() {
+            console.log('Limpiando datos de usuario...');
+            
+            // Eliminar datos de sesión
+            localStorage.removeItem('destelloOroCurrentUser');
+            localStorage.removeItem('destelloOroSessionInfo');
+            
+            // Resetear usuarios a valores iniciales
+            const initialUsers = [
+                { 
+                    username: 'admin', 
+                    password: 'admin123', 
+                    role: 'admin', 
+                    name: 'Administrador',
+                    lastName: 'Principal',
+                    phone: '',
+                    personalInfoSaved: false
+                },
+                { 
+                    username: 'trabajador', 
+                    password: 'trabajador123', 
+                    role: 'worker', 
+                    name: 'Vendedor',
+                    lastName: 'Principal',
+                    phone: '',
+                    personalInfoSaved: false
+                }
+            ];
+            
+            localStorage.setItem('destelloOroUsers', JSON.stringify(initialUsers));
+            console.log('Datos reiniciados correctamente');
+            console.log('Usuarios disponibles:');
+            console.log('1. admin / admin123 (Administrador)');
+            console.log('2. trabajador / trabajador123 (Trabajador)');
+            
+            // Recargar la página
+            location.reload();
+        }
+    </script>
+
+</body>
+</html>
