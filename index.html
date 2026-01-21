@@ -1301,9 +1301,15 @@
             background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
         }
 
-        .stat-card:hover {
+        .stat-card.clickable {
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .stat-card.clickable:hover {
             transform: translateY(-3px);
             box-shadow: var(--shadow-medium);
+            border-color: var(--gold-primary);
         }
 
         .stat-icon {
@@ -2798,6 +2804,15 @@
         </div>
     </div>
 
+    <!-- Modal para detalles mensuales -->
+    <div id="monthlyDetailsModal" class="custom-dialog">
+        <div class="dialog-content" style="max-width: 1000px; max-height: 90vh; overflow-y: auto;">
+            <div id="monthlyDetailsContent">
+                <!-- Se llenará dinámicamente -->
+            </div>
+        </div>
+    </div>
+
     <script>
         // Variables globales
         let currentUser = null;
@@ -4142,10 +4157,8 @@
             const restocks = JSON.parse(localStorage.getItem('destelloOroRestocks'));
             const warranties = JSON.parse(localStorage.getItem('destelloOroWarranties'));
             
-            // Filtrar por mes actual
-            const currentDate = new Date();
-            const currentMonth = currentDate.getMonth();
-            const currentYear = currentDate.getFullYear();
+            // Filtrar por mes y año seleccionados
+            // Usar las variables globales currentMonth y currentYear
             
             const monthlySales = sales.filter(sale => {
                 const saleDate = new Date(sale.date);
@@ -4184,7 +4197,7 @@
             
             // Actualizar resumen mensual
             monthlySummary.innerHTML = `
-                <div class="stat-card">
+                <div class="stat-card clickable" onclick="showMonthlyDetails('sales')">
                     <div class="stat-icon">
                         <i class="fas fa-chart-line"></i>
                     </div>
@@ -4193,7 +4206,7 @@
                     <small>${monthlySales.length} ventas confirmadas</small>
                     <small style="color: var(--warning);">Incl. garantías: ${formatCurrency(totalWarrantyIncrement)}</small>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card clickable" onclick="showMonthlyDetails('expenses')">
                     <div class="stat-icon">
                         <i class="fas fa-receipt"></i>
                     </div>
@@ -4201,7 +4214,7 @@
                     <div class="stat-label">Gastos del Mes</div>
                     <small>${monthlyExpenses.length} gastos registrados</small>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card clickable" onclick="showMonthlyDetails('restocks')">
                     <div class="stat-icon">
                         <i class="fas fa-boxes"></i>
                     </div>
@@ -4209,7 +4222,7 @@
                     <div class="stat-label">Inventario Surtido</div>
                     <small>${monthlyRestocks.length} surtidos realizados</small>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card clickable" onclick="showMonthlyDetails('warranties')">
                     <div class="stat-icon">
                         <i class="fas fa-shield-alt"></i>
                     </div>
@@ -4217,7 +4230,7 @@
                     <div class="stat-label">Costos Garantías</div>
                     <small>${monthlyWarranties.length} garantías gestionadas</small>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card clickable" onclick="showMonthlyDetails('profit')">
                     <div class="stat-icon">
                         <i class="fas fa-coins"></i>
                     </div>
@@ -4226,6 +4239,639 @@
                     <small>Ventas - Gastos - Surtidos - Garantías</small>
                 </div>
             `;
+        }
+        
+        // Mostrar detalles mensuales
+        function showMonthlyDetails(type) {
+            const modal = document.getElementById('monthlyDetailsModal');
+            const content = document.getElementById('monthlyDetailsContent');
+            
+            // Obtener datos del mes actual
+            const sales = JSON.parse(localStorage.getItem('destelloOroSales')) || [];
+            const expenses = JSON.parse(localStorage.getItem('destelloOroExpenses')) || [];
+            const restocks = JSON.parse(localStorage.getItem('destelloOroRestocks')) || [];
+            const warranties = JSON.parse(localStorage.getItem('destelloOroWarranties')) || [];
+            
+            // Usar las variables globales currentMonth y currentYear
+            // const currentDate = new Date();
+            // const currentMonth = currentDate.getMonth();
+            // const currentYear = currentDate.getFullYear();
+            
+            const monthlySales = sales.filter(sale => {
+                const saleDate = new Date(sale.date);
+                return saleDate.getMonth() === currentMonth && 
+                       saleDate.getFullYear() === currentYear && 
+                       sale.confirmed;
+            });
+            
+            const monthlyExpenses = expenses.filter(expense => {
+                const expenseDate = new Date(expense.date);
+                return expenseDate.getMonth() === currentMonth && 
+                       expenseDate.getFullYear() === currentYear;
+            });
+            
+            const monthlyRestocks = restocks.filter(restock => {
+                const restockDate = new Date(restock.date);
+                return restockDate.getMonth() === currentMonth && 
+                       restockDate.getFullYear() === currentYear;
+            });
+            
+            const monthlyWarranties = warranties.filter(warranty => {
+                const warrantyDate = new Date(warranty.createdAt);
+                return warrantyDate.getMonth() === currentMonth && 
+                       warrantyDate.getFullYear() === currentYear;
+            });
+            
+            // Calcular totales
+            const totalSales = monthlySales.reduce((sum, sale) => sum + sale.total, 0);
+            const totalExpenses = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const totalRestocks = monthlyRestocks.reduce((sum, restock) => sum + restock.totalValue, 0);
+            const totalWarrantyCosts = monthlyWarranties.reduce((sum, warranty) => sum + (warranty.totalCost || 0), 0);
+            const totalWarrantyIncrement = monthlySales.reduce((sum, sale) => sum + (sale.warrantyIncrement || 0), 0);
+            const netProfit = totalSales - totalExpenses - totalRestocks - totalWarrantyCosts;
+            
+            let title = '';
+            let detailsHTML = '';
+            
+            switch(type) {
+                case 'sales':
+                    title = `Detalles de Ventas - ${new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
+                    detailsHTML = generateSalesDetailsHTML(monthlySales, totalSales, totalWarrantyIncrement);
+                    break;
+                case 'expenses':
+                    title = `Detalles de Gastos - ${new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
+                    detailsHTML = generateExpensesDetailsHTML(monthlyExpenses, totalExpenses);
+                    break;
+                case 'restocks':
+                    title = `Detalles de Surtidos - ${new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
+                    detailsHTML = generateRestocksDetailsHTML(monthlyRestocks, totalRestocks);
+                    break;
+                case 'warranties':
+                    title = `Detalles de Garantías - ${new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
+                    detailsHTML = generateWarrantiesDetailsHTML(monthlyWarranties, totalWarrantyCosts);
+                    break;
+                case 'profit':
+                    title = `Resumen de Ganancias - ${new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
+                    detailsHTML = generateProfitDetailsHTML(totalSales, totalExpenses, totalRestocks, totalWarrantyCosts, netProfit);
+                    break;
+            }
+            
+            content.innerHTML = `
+                <div class="dialog-icon" style="color: var(--gold-primary);">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h2 class="dialog-title">${title}</h2>
+                <div class="dialog-message" style="text-align: left; max-height: 500px; overflow-y: auto;">
+                    ${detailsHTML}
+                </div>
+                <div class="dialog-buttons">
+                    <button onclick="downloadMonthlyReport('${type}')" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Descargar PDF
+                    </button>
+                    <button onclick="document.getElementById('monthlyDetailsModal').style.display='none'" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Cerrar
+                    </button>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+        
+        // Generar HTML para detalles de ventas
+        function generateSalesDetailsHTML(sales, total, warrantyIncrement) {
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: var(--gold-dark); border-bottom: 2px solid var(--gold-primary); padding-bottom: 10px;">
+                        <i class="fas fa-chart-line"></i> Resumen de Ventas
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <strong style="font-size: 1.2em; color: var(--success);">${formatCurrency(total)}</strong><br>
+                            <small>Total Ventas</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <strong style="font-size: 1.2em; color: var(--warning);">${formatCurrency(warrantyIncrement)}</strong><br>
+                            <small>Incremento por Garantías</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <strong style="font-size: 1.2em; color: var(--info);">${sales.length}</strong><br>
+                            <small>Total Transacciones</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 style="color: var(--gold-dark); margin-bottom: 15px;">
+                        <i class="fas fa-list"></i> Detalle de Ventas
+                    </h4>
+                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: var(--gold-light); position: sticky; top: 0;">
+                                <tr>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Fecha</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Factura</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Cliente</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Total</th>
+                                    <th style="padding: 10px; text-align: center; border-bottom: 1px solid #ddd;">Pago</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            sales.forEach(sale => {
+                html += `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px;">${formatDate(sale.date)}</td>
+                        <td style="padding: 10px;">${sale.id || 'N/A'}</td>
+                        <td style="padding: 10px;">${sale.customerName || 'Cliente General'}</td>
+                        <td style="padding: 10px; text-align: right; font-weight: bold;">${formatCurrency(sale.total)}</td>
+                        <td style="padding: 10px; text-align: center;">
+                            <span class="payment-badge ${getPaymentMethodClass(sale.paymentMethod)}">${getPaymentMethodName(sale.paymentMethod)}</span>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // Generar HTML para detalles de gastos
+        function generateExpensesDetailsHTML(expenses, total) {
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: var(--gold-dark); border-bottom: 2px solid var(--gold-primary); padding-bottom: 10px;">
+                        <i class="fas fa-receipt"></i> Resumen de Gastos
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <strong style="font-size: 1.2em; color: var(--danger);">${formatCurrency(total)}</strong><br>
+                            <small>Total Gastos</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <strong style="font-size: 1.2em; color: var(--info);">${expenses.length}</strong><br>
+                            <small>Total Registros</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 style="color: var(--gold-dark); margin-bottom: 15px;">
+                        <i class="fas fa-list"></i> Detalle de Gastos
+                    </h4>
+                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: var(--gold-light); position: sticky; top: 0;">
+                                <tr>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Fecha</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Descripción</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Categoría</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Monto</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Usuario</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            expenses.forEach(expense => {
+                html += `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px;">${formatDate(expense.date)}</td>
+                        <td style="padding: 10px;">${expense.description}</td>
+                        <td style="padding: 10px;">${expense.category || 'General'}</td>
+                        <td style="padding: 10px; text-align: right; font-weight: bold;">${formatCurrency(expense.amount)}</td>
+                        <td style="padding: 10px;">${getUserName(expense.user)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // Generar HTML para detalles de surtidos
+        function generateRestocksDetailsHTML(restocks, total) {
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: var(--gold-dark); border-bottom: 2px solid var(--gold-primary); padding-bottom: 10px;">
+                        <i class="fas fa-boxes"></i> Resumen de Surtidos
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <strong style="font-size: 1.2em; color: var(--warning);">${formatCurrency(total)}</strong><br>
+                            <small>Valor Total</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <strong style="font-size: 1.2em; color: var(--info);">${restocks.length}</strong><br>
+                            <small>Total Surtidos</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 style="color: var(--gold-dark); margin-bottom: 15px;">
+                        <i class="fas fa-list"></i> Detalle de Surtidos
+                    </h4>
+                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: var(--gold-light); position: sticky; top: 0;">
+                                <tr>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Fecha</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Producto</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Referencia</th>
+                                    <th style="padding: 10px; text-align: center; border-bottom: 1px solid #ddd;">Cantidad</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Valor</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Usuario</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            restocks.forEach(restock => {
+                html += `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px;">${formatDate(restock.date)}</td>
+                        <td style="padding: 10px;">${restock.productName}</td>
+                        <td style="padding: 10px;">${restock.productId}</td>
+                        <td style="padding: 10px; text-align: center;">${restock.quantity}</td>
+                        <td style="padding: 10px; text-align: right; font-weight: bold;">${formatCurrency(restock.totalValue)}</td>
+                        <td style="padding: 10px;">${getUserName(restock.user)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // Generar HTML para detalles de garantías
+        function generateWarrantiesDetailsHTML(warranties, total) {
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: var(--gold-dark); border-bottom: 2px solid var(--gold-primary); padding-bottom: 10px;">
+                        <i class="fas fa-shield-alt"></i> Resumen de Garantías
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <strong style="font-size: 1.2em; color: var(--danger);">${formatCurrency(total)}</strong><br>
+                            <small>Costo Total</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <strong style="font-size: 1.2em; color: var(--info);">${warranties.length}</strong><br>
+                            <small>Total Garantías</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 style="color: var(--gold-dark); margin-bottom: 15px;">
+                        <i class="fas fa-list"></i> Detalle de Garantías
+                    </h4>
+                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: var(--gold-light); position: sticky; top: 0;">
+                                <tr>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Fecha</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Venta ID</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Cliente</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Motivo</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Costo</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            warranties.forEach(warranty => {
+                html += `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px;">${formatDate(warranty.createdAt)}</td>
+                        <td style="padding: 10px;">${warranty.saleId || 'N/A'}</td>
+                        <td style="padding: 10px;">${warranty.customerName || 'N/A'}</td>
+                        <td style="padding: 10px;">${getWarrantyReasonText(warranty.reason)}</td>
+                        <td style="padding: 10px; text-align: right; font-weight: bold;">${formatCurrency(warranty.totalCost || 0)}</td>
+                        <td style="padding: 10px;">${getWarrantyStatusText(warranty.status || 'pending')}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // Generar HTML para resumen de ganancias
+        function generateProfitDetailsHTML(salesTotal, expensesTotal, restocksTotal, warrantiesTotal, netProfit) {
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: var(--gold-dark); border-bottom: 2px solid var(--gold-primary); padding-bottom: 10px;">
+                        <i class="fas fa-coins"></i> Análisis de Ganancias
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0;">
+                        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid var(--success);">
+                            <strong style="font-size: 1.2em; color: var(--success);">${formatCurrency(salesTotal)}</strong><br>
+                            <small>Ingresos por Ventas</small>
+                        </div>
+                        <div style="background: #ffebee; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid var(--danger);">
+                            <strong style="font-size: 1.2em; color: var(--danger);">${formatCurrency(expensesTotal)}</strong><br>
+                            <small>Gastos Operativos</small>
+                        </div>
+                        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid var(--warning);">
+                            <strong style="font-size: 1.2em; color: var(--warning);">${formatCurrency(restocksTotal)}</strong><br>
+                            <small>Inversión en Inventario</small>
+                        </div>
+                        <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid #9c27b0;">
+                            <strong style="font-size: 1.2em; color: #9c27b0;">${formatCurrency(warrantiesTotal)}</strong><br>
+                            <small>Costos de Garantías</small>
+                        </div>
+                        <div style="background: ${netProfit >= 0 ? '#e8f5e9' : '#ffebee'}; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid ${netProfit >= 0 ? 'var(--success)' : 'var(--danger)'}; grid-column: span 2;">
+                            <strong style="font-size: 1.5em; color: ${netProfit >= 0 ? 'var(--success)' : 'var(--danger)'};">${formatCurrency(netProfit)}</strong><br>
+                            <small>Ganancia Neta del Mes</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 style="color: var(--gold-dark); margin-bottom: 15px;">
+                        <i class="fas fa-calculator"></i> Desglose Detallado
+                    </h4>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                            <span>Ingresos por Ventas:</span>
+                            <strong style="color: var(--success);">+${formatCurrency(salesTotal)}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                            <span>Gastos Operativos:</span>
+                            <strong style="color: var(--danger);">-(${formatCurrency(expensesTotal)})</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                            <span>Inversión en Inventario:</span>
+                            <strong style="color: var(--warning);">-(${formatCurrency(restocksTotal)})</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                            <span>Costos de Garantías:</span>
+                            <strong style="color: #9c27b0;">-(${formatCurrency(warrantiesTotal)})</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding: 15px; background: ${netProfit >= 0 ? '#e8f5e9' : '#ffebee'}; border-radius: 5px; font-size: 1.1em;">
+                            <span><strong>Ganancia Neta:</strong></span>
+                            <strong style="color: ${netProfit >= 0 ? 'var(--success)' : 'var(--danger)'}; font-size: 1.2em;">${formatCurrency(netProfit)}</strong>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // Función para descargar reporte mensual en PDF
+        async function downloadMonthlyReport(type) {
+            // Usar las variables globales currentMonth y currentYear
+            const monthName = new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+            
+            let title = '';
+            let content = '';
+            
+            // Obtener datos según el tipo
+            const sales = JSON.parse(localStorage.getItem('destelloOroSales')) || [];
+            const expenses = JSON.parse(localStorage.getItem('destelloOroExpenses')) || [];
+            const restocks = JSON.parse(localStorage.getItem('destelloOroRestocks')) || [];
+            const warranties = JSON.parse(localStorage.getItem('destelloOroWarranties')) || [];
+            
+            const monthlySales = sales.filter(sale => {
+                const saleDate = new Date(sale.date);
+                return saleDate.getMonth() === currentMonth && 
+                       saleDate.getFullYear() === currentYear && 
+                       sale.confirmed;
+            });
+            
+            const monthlyExpenses = expenses.filter(expense => {
+                const expenseDate = new Date(expense.date);
+                return expenseDate.getMonth() === currentMonth && 
+                       expenseDate.getFullYear() === currentYear;
+            });
+            
+            const monthlyRestocks = restocks.filter(restock => {
+                const restockDate = new Date(restock.date);
+                return restockDate.getMonth() === currentMonth && 
+                       restockDate.getFullYear() === currentYear;
+            });
+            
+            const monthlyWarranties = warranties.filter(warranty => {
+                const warrantyDate = new Date(warranty.createdAt);
+                return warrantyDate.getMonth() === currentMonth && 
+                       warrantyDate.getFullYear() === currentYear;
+            });
+            
+            switch(type) {
+                case 'sales':
+                    title = `Reporte de Ventas - ${monthName}`;
+                    content = generateSalesPDFContent(monthlySales);
+                    break;
+                case 'expenses':
+                    title = `Reporte de Gastos - ${monthName}`;
+                    content = generateExpensesPDFContent(monthlyExpenses);
+                    break;
+                case 'restocks':
+                    title = `Reporte de Surtidos - ${monthName}`;
+                    content = generateRestocksPDFContent(monthlyRestocks);
+                    break;
+                case 'warranties':
+                    title = `Reporte de Garantías - ${monthName}`;
+                    content = generateWarrantiesPDFContent(monthlyWarranties);
+                    break;
+                case 'profit':
+                    title = `Análisis de Ganancias - ${monthName}`;
+                    content = generateProfitPDFContent(monthlySales, monthlyExpenses, monthlyRestocks, monthlyWarranties);
+                    break;
+            }
+            
+            // Crear PDF usando jsPDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Configurar fuente y colores
+            doc.setFont('helvetica');
+            
+            // Título
+            doc.setFontSize(20);
+            doc.setTextColor(212, 175, 55); // Gold color
+            doc.text(title, 20, 30);
+            
+            // Línea decorativa
+            doc.setDrawColor(212, 175, 55);
+            doc.setLineWidth(1);
+            doc.line(20, 35, 190, 35);
+            
+            // Contenido
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            
+            const lines = doc.splitTextToSize(content, 170);
+            let yPosition = 50;
+            
+            lines.forEach(line => {
+                if (yPosition > 270) {
+                    doc.addPage();
+                    yPosition = 30;
+                }
+                doc.text(line, 20, yPosition);
+                yPosition += 7;
+            });
+            
+            // Pie de página
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(128, 128, 128);
+                doc.text(`Generado por Destello de Oro 18K - ${new Date().toLocaleDateString('es-ES')}`, 20, 285);
+                doc.text(`Página ${i} de ${pageCount}`, 170, 285);
+            }
+            
+            // Descargar PDF
+            doc.save(`${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+            
+            // Mostrar mensaje de éxito
+            showDialog('Éxito', 'El reporte PDF se ha descargado correctamente.', 'success');
+        }
+        
+        // Funciones auxiliares para generar contenido PDF
+        function generateSalesPDFContent(sales) {
+            let content = `REPORTE DETALLADO DE VENTAS\n\n`;
+            content += `Total de ventas: ${sales.length}\n`;
+            content += `Valor total: ${formatCurrency(sales.reduce((sum, sale) => sum + sale.total, 0))}\n\n`;
+            
+            content += `DETALLE DE VENTAS:\n`;
+            content += `Fecha\t\tFactura\t\tCliente\t\tTotal\t\tPago\n`;
+            content += `--------------------------------------------------------------------------------\n`;
+            
+            sales.forEach(sale => {
+                content += `${formatDate(sale.date)}\t${sale.id || 'N/A'}\t${(sale.customerName || 'Cliente General').substring(0, 15)}\t${formatCurrency(sale.total)}\t${getPaymentMethodName(sale.paymentMethod)}\n`;
+            });
+            
+            return content;
+        }
+        
+        function generateExpensesPDFContent(expenses) {
+            let content = `REPORTE DETALLADO DE GASTOS\n\n`;
+            content += `Total de gastos: ${expenses.length}\n`;
+            content += `Valor total: ${formatCurrency(expenses.reduce((sum, expense) => sum + expense.amount, 0))}\n\n`;
+            
+            content += `DETALLE DE GASTOS:\n`;
+            content += `Fecha\t\tDescripción\t\tCategoría\t\tMonto\t\tUsuario\n`;
+            content += `--------------------------------------------------------------------------------\n`;
+            
+            expenses.forEach(expense => {
+                content += `${formatDate(expense.date)}\t${expense.description.substring(0, 20)}\t${(expense.category || 'General').substring(0, 15)}\t${formatCurrency(expense.amount)}\t${getUserName(expense.user)}\n`;
+            });
+            
+            return content;
+        }
+        
+        function generateRestocksPDFContent(restocks) {
+            let content = `REPORTE DETALLADO DE SURTIDOS\n\n`;
+            content += `Total de surtidos: ${restocks.length}\n`;
+            content += `Valor total: ${formatCurrency(restocks.reduce((sum, restock) => sum + restock.totalValue, 0))}\n\n`;
+            
+            content += `DETALLE DE SURTIDOS:\n`;
+            content += `Fecha\t\tProducto\t\tReferencia\t\tCantidad\t\tValor\t\tUsuario\n`;
+            content += `--------------------------------------------------------------------------------\n`;
+            
+            restocks.forEach(restock => {
+                content += `${formatDate(restock.date)}\t${restock.productName.substring(0, 15)}\t${restock.productId}\t${restock.quantity}\t${formatCurrency(restock.totalValue)}\t${getUserName(restock.user)}\n`;
+            });
+            
+            return content;
+        }
+        
+        function generateWarrantiesPDFContent(warranties) {
+            let content = `REPORTE DETALLADO DE GARANTÍAS\n\n`;
+            content += `Total de garantías: ${warranties.length}\n`;
+            content += `Costo total: ${formatCurrency(warranties.reduce((sum, warranty) => sum + (warranty.totalCost || 0), 0))}\n\n`;
+            
+            content += `DETALLE DE GARANTÍAS:\n`;
+            content += `Fecha\t\tVenta ID\t\tCliente\t\tMotivo\t\tCosto\t\tEstado\n`;
+            content += `--------------------------------------------------------------------------------\n`;
+            
+            warranties.forEach(warranty => {
+                content += `${formatDate(warranty.createdAt)}\t${warranty.saleId || 'N/A'}\t${(warranty.customerName || 'N/A').substring(0, 15)}\t${getWarrantyReasonText(warranty.reason).substring(0, 15)}\t${formatCurrency(warranty.totalCost || 0)}\t${getWarrantyStatusText(warranty.status || 'pending')}\n`;
+            });
+            
+            return content;
+        }
+        
+        function generateProfitPDFContent(sales, expenses, restocks, warranties) {
+            const salesTotal = sales.reduce((sum, sale) => sum + sale.total, 0);
+            const expensesTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const restocksTotal = restocks.reduce((sum, restock) => sum + restock.totalValue, 0);
+            const warrantiesTotal = warranties.reduce((sum, warranty) => sum + (warranty.totalCost || 0), 0);
+            const netProfit = salesTotal - expensesTotal - restocksTotal - warrantiesTotal;
+            
+            let content = `ANÁLISIS DE GANANCIAS DEL MES\n\n`;
+            content += `RESUMEN FINANCIERO:\n`;
+            content += `--------------------------------------------------------------------------------\n`;
+            content += `Ingresos por Ventas:     +${formatCurrency(salesTotal)}\n`;
+            content += `Gastos Operativos:       -${formatCurrency(expensesTotal)}\n`;
+            content += `Inversión en Inventario: -${formatCurrency(restocksTotal)}\n`;
+            content += `Costos de Garantías:     -${formatCurrency(warrantiesTotal)}\n`;
+            content += `--------------------------------------------------------------------------------\n`;
+            content += `GANANCIA NETA:           ${formatCurrency(netProfit)}\n\n`;
+            
+            content += `DETALLES:\n`;
+            content += `- ${sales.length} ventas realizadas\n`;
+            content += `- ${expenses.length} gastos registrados\n`;
+            content += `- ${restocks.length} surtidos de inventario\n`;
+            content += `- ${warranties.length} garantías gestionadas\n`;
+            
+            return content;
+        }
+        
+        // Función auxiliar para obtener clase de método de pago para badges
+        function getPaymentMethodClass(method) {
+            const classes = {
+                'transfer': 'payment-transfer',
+                'cash': 'payment-cash',
+                'bold': 'payment-bold',
+                'addi': 'payment-addi',
+                'sistecredito': 'payment-sistecredito',
+                'cod': 'payment-cod'
+            };
+            return classes[method] || 'payment-cash';
+        }
+        
+        // Función auxiliar para obtener texto del motivo de garantía
+        function getWarrantyReasonText(reason) {
+            const reasons = {
+                'color_change': 'Cambio de Color',
+                'damage': 'Daño',
+                'size_issue': 'Problema de Talla',
+                'quality_issue': 'Problema de Calidad',
+                'other': 'Otro'
+            };
+            return reasons[reason] || 'No especificado';
         }
         
         // Función auxiliar para ver detalles de surtido
@@ -6551,11 +7197,13 @@
             monthSelect.addEventListener('change', function() {
                 currentMonth = parseInt(this.value);
                 loadHistoryCards();
+                loadMonthlySummary(); // Recargar resumen mensual
             });
             
             yearSelect.addEventListener('change', function() {
                 currentYear = parseInt(this.value);
                 loadHistoryCards();
+                loadMonthlySummary(); // Recargar resumen mensual
             });
         }
         
