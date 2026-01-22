@@ -1119,6 +1119,7 @@
         .history-card-icon.restocks { background: linear-gradient(135deg, #FFA500 0%, #FFD700 100%); }
         .history-card-icon.warranties { background: linear-gradient(135deg, #4169E1 0%, #1E90FF 100%); }
         .history-card-icon.pending { background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%); }
+        .history-card-icon.profit { background: linear-gradient(135deg, #8BC34A 0%, #CDDC39 100%); }
 
         .history-card-title {
             font-size: 1.2rem;
@@ -2399,6 +2400,7 @@
                             <option value="restocks">Surtidos</option>
                             <option value="warranties">Garantías</option>
                             <option value="pending">Pendientes</option>
+                            <option value="profit">Ganancias</option>
                         </select>
                         <button id="refreshHistory" class="btn btn-info">
                             <i class="fas fa-sync-alt"></i> Actualizar
@@ -2853,7 +2855,8 @@
             'expenses': { icon: 'fa-file-invoice-dollar', color: 'expenses', title: 'Gastos' },
             'restocks': { icon: 'fa-truck-loading', color: 'restocks', title: 'Surtidos' },
             'warranties': { icon: 'fa-shield-alt', color: 'warranties', title: 'Garantías' },
-            'pending': { icon: 'fa-clock', color: 'pending', title: 'Pendientes' }
+            'pending': { icon: 'fa-clock', color: 'pending', title: 'Pendientes' },
+            'profit': { icon: 'fa-coins', color: 'profit', title: 'Ganancias' }
         };
         
         // Inicializar la aplicación
@@ -3604,6 +3607,14 @@
                         filteredRestocks = [];
                         filteredWarranties = [];
                         break;
+                    case 'profit':
+                        filteredExpenses = [];
+                        filteredRestocks = [];
+                        filteredWarranties = [];
+                        filteredPending = [];
+                        break;
+                        filteredWarranties = [];
+                        break;
                 }
             }
             
@@ -3635,6 +3646,11 @@
                 createHistoryCard('pending', filteredPending);
             }
             
+            // Tarjeta de Ganancias (siempre mostrar si hay ventas)
+            if (filteredSales.length > 0) {
+                createProfitHistoryCard(filteredSales);
+            }
+            
             // Si no hay datos
             if (cardsContainer.innerHTML === '') {
                 cardsContainer.innerHTML = `
@@ -3648,6 +3664,96 @@
             
             // Cargar resumen mensual
             loadMonthlySummary();
+        }
+        
+        // Crear tarjeta de ganancias con opciones (detal, mayorista, total)
+        function createProfitHistoryCard(sales) {
+            const cardsContainer = document.getElementById('historyCardsView');
+            const products = JSON.parse(localStorage.getItem('destelloOroProducts')) || [];
+            
+            // Calcular ganancias por tipo de venta
+            let retailSales = 0;
+            let wholesaleSales = 0;
+            let retailCOGS = 0;
+            let wholesaleCOGS = 0;
+            
+            sales.forEach(sale => {
+                const isRetail = sale.saleType === 'retail';
+                const saleTotal = sale.total || 0;
+                
+                // Calcular COGS para esta venta
+                const saleCOGS = (sale.products || []).reduce((sum, product) => {
+                    const prod = products.find(p => p.id === product.productId);
+                    if (prod) {
+                        return sum + (prod.purchasePrice * product.quantity);
+                    }
+                    return sum;
+                }, 0);
+                
+                if (isRetail) {
+                    retailSales += saleTotal;
+                    retailCOGS += saleCOGS;
+                } else {
+                    wholesaleSales += saleTotal;
+                    wholesaleCOGS += saleCOGS;
+                }
+            });
+            
+            const retailProfit = retailSales - retailCOGS;
+            const wholesaleProfit = wholesaleSales - wholesaleCOGS;
+            const totalProfit = retailProfit + wholesaleProfit;
+            
+            const card = document.createElement('div');
+            card.className = 'history-card';
+            card.dataset.type = 'profit';
+            
+            card.innerHTML = `
+                <div class="history-card-header">
+                    <div class="history-card-icon profit">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="history-card-title">Ganancias</div>
+                </div>
+                
+                <div class="history-card-count">${sales.length} ventas</div>
+                
+                <div class="history-card-details">
+                    <div class="history-card-detail">
+                        <span>Al Detal:</span>
+                        <span class="history-card-detail-value" style="color: #4CAF50;">${formatCurrency(retailProfit)}</span>
+                    </div>
+                    <div class="history-card-detail">
+                        <span>Mayorista:</span>
+                        <span class="history-card-detail-value" style="color: #2196F3;">${formatCurrency(wholesaleProfit)}</span>
+                    </div>
+                    <div class="history-card-detail">
+                        <span>Total:</span>
+                        <span class="history-card-detail-value" style="color: var(--gold-primary); font-weight: bold;">${formatCurrency(totalProfit)}</span>
+                    </div>
+                    <div class="history-card-detail">
+                        <span>Ventas:</span>
+                        <span class="history-card-detail-value">${formatCurrency(retailSales + wholesaleSales)}</span>
+                    </div>
+                </div>
+                
+                <div class="history-card-footer">
+                    <div class="history-card-user">
+                        <i class="fas fa-chart-line history-card-user-icon"></i>
+                        <span>Análisis de ganancias</span>
+                    </div>
+                    <div class="history-card-date">
+                        <i class="fas fa-calendar history-card-date-icon"></i>
+                        <span>Hoy ${new Date().toLocaleDateString('es-CO')}</span>
+                    </div>
+                </div>
+            `;
+            
+            // Agregar evento para mostrar detalles
+            card.addEventListener('click', function() {
+                showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfit, sales);
+            });
+            
+            cardsContainer.appendChild(card);
         }
         
         // Crear tarjeta del historial
@@ -3754,6 +3860,130 @@
             });
             
             cardsContainer.appendChild(card);
+        }
+        
+        // Mostrar detalles de ganancias
+        function showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfit, sales) {
+            // Ocultar tarjetas
+            document.getElementById('historyCardsView').style.display = 'none';
+            document.getElementById('historyDetailsView').style.display = 'block';
+            
+            const content = document.getElementById('monthlyDetailsContent');
+            const title = `Análisis de Ganancias - ${new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
+            
+            const detailsHTML = generateProfitBreakdownHTML(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfit, sales);
+            
+            content.innerHTML = `
+                <div class="dialog-icon" style="color: var(--gold-primary);">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <h2 style="color: var(--gold-dark); margin-top: 10px;">${title}</h2>
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #ddd;">
+                ${detailsHTML}
+            `;
+            
+            document.getElementById('monthlyDetailsModal').style.display = 'flex';
+        }
+        
+        // Generar HTML del desglose de ganancias
+        function generateProfitBreakdownHTML(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfit, sales) {
+            return `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: var(--gold-dark); border-bottom: 2px solid var(--gold-primary); padding-bottom: 10px;">
+                        <i class="fas fa-coins"></i> Análisis de Ganancias
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0;">
+                        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid #4CAF50;">
+                            <strong style="font-size: 1.2em; color: #4CAF50;">💚 Ganancias al Detal</strong><br>
+                            <div style="font-size: 1.5em; color: #4CAF50; margin: 10px 0;">
+                                ${formatCurrency(retailProfit)}
+                            </div>
+                            <small>Ventas: ${formatCurrency(retailSales)}</small><br>
+                            <small>Costo: ${formatCurrency(retailCOGS)}</small>
+                        </div>
+                        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid #2196F3;">
+                            <strong style="font-size: 1.2em; color: #2196F3;">💙 Ganancias Mayorista</strong><br>
+                            <div style="font-size: 1.5em; color: #2196F3; margin: 10px 0;">
+                                ${formatCurrency(wholesaleProfit)}
+                            </div>
+                            <small>Ventas: ${formatCurrency(wholesaleSales)}</small><br>
+                            <small>Costo: ${formatCurrency(wholesaleCOGS)}</small>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 15px; border-radius: 8px; text-align: center; border: 2px solid var(--gold-primary);">
+                            <strong style="font-size: 1.2em; color: var(--gold-dark);">⭐ Ganancia Total</strong><br>
+                            <div style="font-size: 1.8em; color: var(--gold-primary); margin: 10px 0; font-weight: bold;">
+                                ${formatCurrency(totalProfit)}
+                            </div>
+                            <small>Total Ventas: ${formatCurrency(retailSales + wholesaleSales)}</small><br>
+                            <small>Total Costo: ${formatCurrency(retailCOGS + wholesaleCOGS)}</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 style="color: var(--gold-dark); margin-bottom: 15px;">
+                        <i class="fas fa-list"></i> Detalle de Ventas por Tipo
+                    </h4>
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: var(--gold-light); position: sticky; top: 0;">
+                                <tr>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Fecha</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Tipo</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Ventas</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Costo</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Ganancia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sales.map(sale => {
+                                    const isRetail = sale.saleType === 'retail';
+                                    const products = JSON.parse(localStorage.getItem('destelloOroProducts')) || [];
+                                    const saleCOGS = (sale.products || []).reduce((sum, product) => {
+                                        const prod = products.find(p => p.id === product.productId);
+                                        if (prod) {
+                                            return sum + (prod.purchasePrice * product.quantity);
+                                        }
+                                        return sum;
+                                    }, 0);
+                                    const profit = sale.total - saleCOGS;
+                                    const typeLabel = isRetail ? 'Al Detal' : 'Mayorista';
+                                    const typeColor = isRetail ? '#4CAF50' : '#2196F3';
+                                    
+                                    return `
+                                        <tr style="border-bottom: 1px solid #eee;">
+                                            <td style="padding: 10px;">${formatDate(sale.date)}</td>
+                                            <td style="padding: 10px;">
+                                                <span style="background: ${typeColor}; color: white; padding: 3px 8px; border-radius: 3px; font-size: 0.85em;">
+                                                    ${typeLabel}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 10px; text-align: right;">${formatCurrency(sale.total)}</td>
+                                            <td style="padding: 10px; text-align: right;">${formatCurrency(saleCOGS)}</td>
+                                            <td style="padding: 10px; text-align: right; font-weight: bold; color: ${profit >= 0 ? '#4CAF50' : '#F44336'};">
+                                                ${formatCurrency(profit)}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0; text-align: center;">
+                    <button onclick="backToHistoryCards()" style="background: linear-gradient(135deg, #8BC34A 0%, #CDDC39 100%); color: white; border: none; padding: 12px 30px; border-radius: 25px; font-size: 1em; font-weight: 600; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transition: all 0.3s ease;">
+                        <i class="fas fa-arrow-left"></i> Volver al Historial
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Volver a las tarjetas del historial
+        function backToHistoryCards() {
+            document.getElementById('monthlyDetailsModal').style.display = 'none';
+            document.getElementById('historyCardsView').style.display = 'grid';
+            document.getElementById('historyDetailsView').style.display = 'none';
         }
         
         // Mostrar detalles del historial
@@ -4188,12 +4418,25 @@
             // Calcular totales
             const totalSales = monthlySales.reduce((sum, sale) => sum + sale.total, 0);
             const totalExpenses = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-            const totalRestocks = monthlyRestocks.reduce((sum, restock) => sum + restock.totalValue, 0);
+            
+            // CORRECCIÓN: Calcular el COSTO REAL de lo vendido basándose en el purchasePrice de los productos
+            const products = JSON.parse(localStorage.getItem('destelloOroProducts')) || [];
+            const costOfGoodsSold = monthlySales.reduce((sum, sale) => {
+                const saleCost = (sale.products || []).reduce((saleSum, product) => {
+                    const prod = products.find(p => p.id === product.productId);
+                    if (prod) {
+                        return saleSum + (prod.purchasePrice * product.quantity);
+                    }
+                    return saleSum;
+                }, 0);
+                return sum + saleCost;
+            }, 0);
+            
             const totalWarrantyCosts = monthlyWarranties.reduce((sum, warranty) => sum + (warranty.totalCost || 0), 0);
             
             // IMPORTANTE: Incluir el incremento por garantía en las ventas
             const totalWarrantyIncrement = monthlySales.reduce((sum, sale) => sum + (sale.warrantyIncrement || 0), 0);
-            const netProfit = totalSales - totalExpenses - totalRestocks - totalWarrantyCosts;
+            const netProfit = totalSales - totalExpenses - costOfGoodsSold - totalWarrantyCosts;
             
             // Actualizar resumen mensual
             monthlySummary.innerHTML = `
@@ -4218,9 +4461,9 @@
                     <div class="stat-icon">
                         <i class="fas fa-boxes"></i>
                     </div>
-                    <div class="stat-value">${formatCurrency(totalRestocks)}</div>
-                    <div class="stat-label">Inventario Surtido</div>
-                    <small>${monthlyRestocks.length} surtidos realizados</small>
+                    <div class="stat-value">${formatCurrency(costOfGoodsSold)}</div>
+                    <div class="stat-label">Costo de lo Vendido</div>
+                    <small>Costo real del inventario vendido</small>
                 </div>
                 <div class="stat-card clickable" onclick="showMonthlyDetails('warranties')">
                     <div class="stat-icon">
@@ -4236,7 +4479,7 @@
                     </div>
                     <div class="stat-value">${formatCurrency(netProfit)}</div>
                     <div class="stat-label">Ganancia Neta</div>
-                    <small>Ventas - Gastos - Surtidos - Garantías</small>
+                    <small>Ventas - Gastos - Costo de lo Vendido - Garantías</small>
                 </div>
             `;
         }
@@ -4285,10 +4528,23 @@
             // Calcular totales
             const totalSales = monthlySales.reduce((sum, sale) => sum + sale.total, 0);
             const totalExpenses = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-            const totalRestocks = monthlyRestocks.reduce((sum, restock) => sum + restock.totalValue, 0);
+            
+            // CORRECCIÓN: Calcular el COSTO REAL de lo vendido basándose en el purchasePrice de los productos
+            const products = JSON.parse(localStorage.getItem('destelloOroProducts')) || [];
+            const costOfGoodsSold = monthlySales.reduce((sum, sale) => {
+                const saleCost = (sale.products || []).reduce((saleSum, product) => {
+                    const prod = products.find(p => p.id === product.productId);
+                    if (prod) {
+                        return saleSum + (prod.purchasePrice * product.quantity);
+                    }
+                    return saleSum;
+                }, 0);
+                return sum + saleCost;
+            }, 0);
+            
             const totalWarrantyCosts = monthlyWarranties.reduce((sum, warranty) => sum + (warranty.totalCost || 0), 0);
             const totalWarrantyIncrement = monthlySales.reduce((sum, sale) => sum + (sale.warrantyIncrement || 0), 0);
-            const netProfit = totalSales - totalExpenses - totalRestocks - totalWarrantyCosts;
+            const netProfit = totalSales - totalExpenses - costOfGoodsSold - totalWarrantyCosts;
             
             let title = '';
             let detailsHTML = '';
@@ -4303,8 +4559,8 @@
                     detailsHTML = generateExpensesDetailsHTML(monthlyExpenses, totalExpenses);
                     break;
                 case 'restocks':
-                    title = `Detalles de Surtidos - ${new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
-                    detailsHTML = generateRestocksDetailsHTML(monthlyRestocks, totalRestocks);
+                    title = `Detalles de Costo de Inventario - ${new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
+                    detailsHTML = generateCostOfGoodsSoldHTML(monthlySales, costOfGoodsSold, products);
                     break;
                 case 'warranties':
                     title = `Detalles de Garantías - ${new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
@@ -4312,7 +4568,7 @@
                     break;
                 case 'profit':
                     title = `Resumen de Ganancias - ${new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
-                    detailsHTML = generateProfitDetailsHTML(totalSales, totalExpenses, totalRestocks, totalWarrantyCosts, netProfit);
+                    detailsHTML = generateProfitDetailsHTML(totalSales, totalExpenses, costOfGoodsSold, totalWarrantyCosts, netProfit);
                     break;
             }
             
@@ -4583,8 +4839,75 @@
             return html;
         }
         
+        // Generar HTML para detalles de costo de lo vendido
+        function generateCostOfGoodsSoldHTML(sales, total, products) {
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: var(--gold-dark); border-bottom: 2px solid var(--gold-primary); padding-bottom: 10px;">
+                        <i class="fas fa-shopping-cart"></i> Costo de Inventario Vendido
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0;">
+                        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; text-align: center;">
+                            <strong style="font-size: 1.2em; color: var(--warning);">${formatCurrency(total)}</strong><br>
+                            <small>Costo Total</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <strong style="font-size: 1.2em; color: var(--info);">${sales.length}</strong><br>
+                            <small>Ventas Procesadas</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 style="color: var(--gold-dark); margin-bottom: 15px;">
+                        <i class="fas fa-list"></i> Desglose de Costos
+                    </h4>
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: var(--gold-light); position: sticky; top: 0;">
+                                <tr>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Fecha</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Producto</th>
+                                    <th style="padding: 10px; text-align: center; border-bottom: 1px solid #ddd;">Cantidad</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Costo Unitario</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Costo Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            sales.forEach(sale => {
+                if (sale.products && sale.products.length > 0) {
+                    sale.products.forEach((product, idx) => {
+                        const productData = products.find(p => p.id === product.productId);
+                        const unitCost = productData ? productData.purchasePrice : product.purchasePrice || 0;
+                        const totalCost = unitCost * product.quantity;
+                        
+                        html += `
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 10px;">${idx === 0 ? formatDate(sale.date) : ''}</td>
+                                <td style="padding: 10px;">${product.productName || productData?.name || 'Producto'}</td>
+                                <td style="padding: 10px; text-align: center;">${product.quantity}</td>
+                                <td style="padding: 10px; text-align: right;">${formatCurrency(unitCost)}</td>
+                                <td style="padding: 10px; text-align: right; font-weight: bold;">${formatCurrency(totalCost)}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            });
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
         // Generar HTML para resumen de ganancias
-        function generateProfitDetailsHTML(salesTotal, expensesTotal, restocksTotal, warrantiesTotal, netProfit) {
+        function generateProfitDetailsHTML(salesTotal, expensesTotal, costOfGoodsSoldTotal, warrantiesTotal, netProfit) {
             let html = `
                 <div style="margin-bottom: 20px;">
                     <h3 style="color: var(--gold-dark); border-bottom: 2px solid var(--gold-primary); padding-bottom: 10px;">
@@ -4600,8 +4923,8 @@
                             <small>Gastos Operativos</small>
                         </div>
                         <div style="background: #fff3e0; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid var(--warning);">
-                            <strong style="font-size: 1.2em; color: var(--warning);">${formatCurrency(restocksTotal)}</strong><br>
-                            <small>Inversión en Inventario</small>
+                            <strong style="font-size: 1.2em; color: var(--warning);">${formatCurrency(costOfGoodsSoldTotal)}</strong><br>
+                            <small>Costo de lo Vendido</small>
                         </div>
                         <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid #9c27b0;">
                             <strong style="font-size: 1.2em; color: #9c27b0;">${formatCurrency(warrantiesTotal)}</strong><br>
@@ -4628,8 +4951,8 @@
                             <strong style="color: var(--danger);">-(${formatCurrency(expensesTotal)})</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-                            <span>Inversión en Inventario:</span>
-                            <strong style="color: var(--warning);">-(${formatCurrency(restocksTotal)})</strong>
+                            <span>Costo de lo Vendido:</span>
+                            <strong style="color: var(--warning);">-(${formatCurrency(costOfGoodsSoldTotal)})</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
                             <span>Costos de Garantías:</span>
@@ -4826,16 +5149,29 @@
         function generateProfitPDFContent(sales, expenses, restocks, warranties) {
             const salesTotal = sales.reduce((sum, sale) => sum + sale.total, 0);
             const expensesTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-            const restocksTotal = restocks.reduce((sum, restock) => sum + restock.totalValue, 0);
+            
+            // CORRECCIÓN: Calcular el COSTO REAL de lo vendido basándose en el purchasePrice de los productos
+            const products = JSON.parse(localStorage.getItem('destelloOroProducts')) || [];
+            const costOfGoodsSold = sales.reduce((sum, sale) => {
+                const saleCost = (sale.products || []).reduce((saleSum, product) => {
+                    const prod = products.find(p => p.id === product.productId);
+                    if (prod) {
+                        return saleSum + (prod.purchasePrice * product.quantity);
+                    }
+                    return saleSum;
+                }, 0);
+                return sum + saleCost;
+            }, 0);
+            
             const warrantiesTotal = warranties.reduce((sum, warranty) => sum + (warranty.totalCost || 0), 0);
-            const netProfit = salesTotal - expensesTotal - restocksTotal - warrantiesTotal;
+            const netProfit = salesTotal - expensesTotal - costOfGoodsSold - warrantiesTotal;
             
             let content = `ANÁLISIS DE GANANCIAS DEL MES\n\n`;
             content += `RESUMEN FINANCIERO:\n`;
             content += `--------------------------------------------------------------------------------\n`;
             content += `Ingresos por Ventas:     +${formatCurrency(salesTotal)}\n`;
             content += `Gastos Operativos:       -${formatCurrency(expensesTotal)}\n`;
-            content += `Inversión en Inventario: -${formatCurrency(restocksTotal)}\n`;
+            content += `Costo de lo Vendido:     -${formatCurrency(costOfGoodsSold)}\n`;
             content += `Costos de Garantías:     -${formatCurrency(warrantiesTotal)}\n`;
             content += `--------------------------------------------------------------------------------\n`;
             content += `GANANCIA NETA:           ${formatCurrency(netProfit)}\n\n`;
@@ -7182,8 +7518,8 @@
                 monthSelect.appendChild(option);
             });
             
-            // Agregar años (desde 2026 hasta 2030)
-            for (let year = 2026; year <= 2030; year++) {
+            // Agregar años (desde 2025 hasta 2030)
+            for (let year = 2025; year <= 2050; year++) {
                 const option = document.createElement('option');
                 option.value = year;
                 option.textContent = year;
