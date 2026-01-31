@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS products (
     wholesale_price DECIMAL(15, 2) NOT NULL,
     retail_price DECIMAL(15, 2) NOT NULL,
     supplier VARCHAR(150),
+    product_date DATE, -- Fecha de ingreso del producto
     added_by VARCHAR(50), -- username
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
