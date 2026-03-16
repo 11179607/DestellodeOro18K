@@ -4,10 +4,14 @@
 // Cargar variables locales si existen (no versionadas)
 @include __DIR__ . '/env.php';
 
-$host = getenv('DB_HOST') ?: ($ENV_DB_HOST ?? 'sql308.infinityfree.com');
-$db_name = getenv('DB_NAME') ?: ($ENV_DB_NAME ?? 'destello_db');
-$username = getenv('DB_USER') ?: ($ENV_DB_USER ?? 'root');
-$password = getenv('DB_PASSWORD') ?: ($ENV_DB_PASSWORD ?? '');
+$host     = getenv('DB_HOST') ?: ($ENV_DB_HOST ?? null);
+$db_name  = getenv('DB_NAME') ?: ($ENV_DB_NAME ?? null);
+$username = getenv('DB_USER') ?: ($ENV_DB_USER ?? null);
+$password = getenv('DB_PASSWORD') ?: ($ENV_DB_PASSWORD ?? null);
+
+if (!$host || !$db_name || !$username || $password === null) {
+    die("Error de configuración: define DB_HOST, DB_NAME, DB_USER y DB_PASSWORD en variables de entorno.");
+}
 
 try {
     $conn = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8", $username, $password);

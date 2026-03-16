@@ -5,6 +5,7 @@ header('Content-Type: application/json');
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 require_once '../config/db.php';
 require_once 'logger.php';
+require_once 'csrf.php';
 
 // Verificar autenticación
 if (!isset($_SESSION['user_id'])) {
@@ -16,6 +17,8 @@ $actorUser   = $_SESSION['username'] ?? 'admin';
 $actorUserId = $_SESSION['user_id'] ?? null;
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+ensureCsrfToken(); // Genera/renueva token y cookie (no obliga en GET)
 
 if ($method === 'GET') {
     // Listar ventas o detalles
@@ -132,6 +135,7 @@ if ($method === 'GET') {
     }
 
 } elseif ($method === 'POST') {
+    requireCsrf();
     // Registrar Venta
     $data = json_decode(file_get_contents("php://input"));
 
@@ -284,6 +288,7 @@ if ($method === 'GET') {
     }
 
 } elseif ($method === 'DELETE') {
+    requireCsrf();
     // Eliminar Venta (Solo admin)
     if ($_SESSION['role'] !== 'admin') {
         http_response_code(403);
@@ -345,6 +350,7 @@ if ($method === 'GET') {
     }
 
 } elseif ($method === 'PUT') {
+    requireCsrf();
     // Editar / confirmar venta (Solo admin)
     if ($_SESSION['role'] !== 'admin') {
         http_response_code(403);

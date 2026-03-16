@@ -17,6 +17,39 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+    <!-- CSRF helper: añade token de la cookie XSRF-TOKEN a cada fetch same-origin -->
+    <script>
+        (() => {
+            const originalFetch = window.fetch;
+            const getToken = () => {
+                const match = document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='));
+                return match ? decodeURIComponent(match.split('=')[1]) : '';
+            };
+            window.fetch = (resource, init = {}) => {
+                const url = (typeof resource === 'string') ? resource : resource.url;
+                const sameOrigin = !/^https?:\/\//i.test(url) || url.startsWith(location.origin);
+                if (sameOrigin) {
+                    init = init || {};
+                    init.headers = new Headers(init.headers || {});
+                    const token = getToken();
+                    if (token) init.headers.set('X-CSRF-Token', token);
+                }
+                return originalFetch(resource, init);
+            };
+        })();
+
+        // Escapar texto para prevenir inyección en innerHTML
+        function escapeHtml(input) {
+            if (input === null || input === undefined) return '';
+            return String(input)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+
     <!-- Icono para la ventana del navegador (Fondo Transparente) -->
     <link rel="icon" type="image/png" href="favicon.png">
     <style>
@@ -4127,12 +4160,12 @@
 
                 row.innerHTML = `
                     <td>
-                        <strong>${item.productName}</strong><br>
-                        <small style="color: #666;">Ref: ${item.productId}</small>
+                        <strong>${escapeHtml(item.productName)}</strong><br>
+                        <small style="color: #666;">Ref: ${escapeHtml(item.productId)}</small>
                     </td>
-                    <td>${item.quantity}</td>
-                    <td>${formatCurrency(item.unitPrice)}</td>
-                    <td><strong>${formatCurrency(item.subtotal)}</strong></td>
+                    <td>${escapeHtml(item.quantity)}</td>
+                    <td>${escapeHtml(formatCurrency(item.unitPrice))}</td>
+                    <td><strong>${escapeHtml(formatCurrency(item.subtotal))}</strong></td>
                     <td class="actions">
                         <button class="btn btn-danger btn-sm" onclick="removeFromCart(${index})">
                             <i class="fas fa-trash"></i>

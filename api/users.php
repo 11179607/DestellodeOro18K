@@ -40,15 +40,12 @@ try {
             $adminUsername = $data->adminUsername ?? '';
             $adminPassword = $data->adminPassword ?? '';
             
-            // Validar credenciales de admin dadas en el body (acepta hash o plano)
+            // Validar credenciales de admin dadas en el body
             $stmt = $conn->prepare("SELECT id, password FROM users WHERE username = :username AND role = 'admin'");
             $stmt->execute([':username' => $adminUsername]);
             $adminRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            $authOk = false;
-            if ($adminRow && (password_verify($adminPassword, $adminRow['password']) || $adminPassword === $adminRow['password'])) {
-                $authOk = true;
-            }
+            $authOk = $adminRow && password_verify($adminPassword, $adminRow['password']);
             
             if (!$authOk) {
                 http_response_code(401);

@@ -3,6 +3,7 @@
 session_start();
 header('Content-Type: application/json');
 require_once '../config/db.php';
+require_once 'csrf.php';
 
 // Verificar autenticación
 if (!isset($_SESSION['user_id'])) {
@@ -14,6 +15,8 @@ $actorUser   = $_SESSION['username'] ?? 'admin';
 $actorUserId = $_SESSION['user_id'] ?? null;
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+ensureCsrfToken(); // preparar token/cookie
 
 if ($method === 'GET') {
     // Listar pendientes - MODIFICADO: Mostrar todas las ventas con métodos de pago diferentes a efectivo
@@ -79,6 +82,7 @@ if ($method === 'GET') {
 
 
 } elseif ($method === 'POST') {
+    requireCsrf();
     // Confirmar pago (POST con action='confirm') O registrar pendiente (si es normal)
     // El JS actual llama a `processSale` que guarda en localStorage.
     // Aquí implementaremos:
@@ -172,6 +176,11 @@ if ($method === 'GET') {
         try {
             $stmt = $conn->prepare("UPDATE sales SET status = 'completed' WHERE invoice_number = :inv OR id = :id");
             $stmt->execute([':inv' => $saleId, ':id' => $saleId]);
+            if ($stmt->rowCount() === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Venta no encontrada o ya confirmada']);
+                exit;
+            }
             echo json_encode(['success' => true, 'message' => 'Venta confirmada']);
         } catch (PDOException $e) {
             http_response_code(500);

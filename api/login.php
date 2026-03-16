@@ -3,6 +3,7 @@
 session_start();
 header("Content-Type: application/json");
 require_once "../config/db.php";
+require_once "csrf.php";
 
 // Obtener datos del cuerpo de la solicitud
 $data = json_decode(file_get_contents("php://input"));
@@ -31,16 +32,21 @@ try {
         exit;
     }
 
-    // Verificar contraseña (acepta hash o texto plano legacy)
-    $isValid = false;
+    $passwordOk = false;
     if ($user) {
         $stored = $user['password'];
-        if (password_verify($password, $stored) || $password === $stored) {
-            $isValid = true;
+        if (password_verify($password, $stored)) {
+            $passwordOk = true;
+        } elseif (hash_equals($password, $stored)) {
+            // Migrar contraseña legacy en texto plano a hash
+            $newHash = password_hash($password, PASSWORD_DEFAULT);
+            $upd = $conn->prepare("UPDATE users SET password = :pw WHERE id = :id");
+            $upd->execute([':pw' => $newHash, ':id' => $user['id']]);
+            $passwordOk = true;
         }
     }
 
-    if ($isValid) {
+    if ($passwordOk) {
         // Resetear intentos y desbloqueo
         $resStmt = $conn->prepare("UPDATE users SET failed_attempts = 0, locked_until = NULL, security_token = NULL WHERE id = :id");
         $resStmt->execute([':id' => $user['id']]);
@@ -50,6 +56,7 @@ try {
         $_SESSION['username'] = $user['username'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['name'] = $user['name'] . ' ' . $user['lastname'];
+        ensureCsrfToken(); // emitir cookie XSRF-TOKEN
 
         echo json_encode([
             'success' => true,
