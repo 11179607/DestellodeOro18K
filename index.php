@@ -9953,7 +9953,7 @@
             const deliveryCost = Number(sale.deliveryCost) || 0;
             const warrantyInc = Number(sale.warrantyIncrement) || 0;
             const discountValue = Number(sale.discount) || 0;
-            const totalFinal = (typeof sale.total === 'number') ? sale.total : (subtotal + deliveryCost + warrantyInc);
+            const totalFinal = (typeof sale.total === 'number') ? sale.total : (subtotal - discountValue + deliveryCost + warrantyInc);
 
             let summaryY = yPos + 4;
             const summaryLabelX = 140;

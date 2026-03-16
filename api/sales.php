@@ -82,6 +82,11 @@ if ($method === 'GET') {
                 }
 
                 // Mapeo a formato esperado por el frontend
+                $itemsSubtotal = 0;
+                foreach ($sale['products'] as $p) {
+                    $itemsSubtotal += ((float)$p['unit_price']) * ((int)$p['quantity']);
+                }
+
                 $sale['date'] = $sale['sale_date'];
                 $sale['customerInfo'] = [
                     'name'    => $sale['customer_name'],
@@ -97,8 +102,13 @@ if ($method === 'GET') {
                 $sale['warrantyIncrement'] = (float)($sale['warranty_increment'] ?? 0);
                 $sale['user']            = $sale['username'];
                 $sale['discount']        = (float)($sale['discount'] ?? 0);
-                // Subtotal estimado: total - envío + descuento - incremento garantía
-                $sale['subtotal']        = (float)$sale['total'] - $sale['deliveryCost'] + $sale['discount'] - $sale['warrantyIncrement'];
+                $sale['subtotal']        = $itemsSubtotal;
+                $computedTotal           = $itemsSubtotal - $sale['discount'] + $sale['deliveryCost'] + $sale['warrantyIncrement'];
+                if (!isset($sale['total']) || $sale['total'] === null) {
+                    $sale['total'] = $computedTotal;
+                } else {
+                    $sale['total'] = (float)$sale['total'];
+                }
                 // Determinar tipo de venta (retail, wholesale o mixed)
                 $types = [];
                 foreach ($sale['products'] as $p) {
@@ -133,18 +143,21 @@ if ($method === 'GET') {
 
     $status = $data->status ?? 'completed';
 
-    // Validar stock antes de procesar
-    $requestedQuantities = [];
+    // Validar stock y recalcular totales con precios de BD
+    $itemsToInsert    = [];
+    $computedSubtotal = 0;
+
     foreach ($data->products as $item) {
         $ref = $item->productId;
-        if (!isset($requestedQuantities[$ref])) {
-            $requestedQuantities[$ref] = 0;
-        }
-        $requestedQuantities[$ref] += $item->quantity;
-    }
+        $qty = (int)$item->quantity;
 
-    foreach ($requestedQuantities as $ref => $qty) {
-        $stmt = $conn->prepare("SELECT quantity, name FROM products WHERE reference = :ref");
+        if ($qty <= 0) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Cantidad inválida para el producto: ' . $ref]);
+            exit;
+        }
+
+        $stmt = $conn->prepare("SELECT quantity, name, retail_price, wholesale_price FROM products WHERE reference = :ref");
         $stmt->execute([':ref' => $ref]);
         $product = $stmt->fetch();
 
@@ -159,7 +172,31 @@ if ($method === 'GET') {
              echo json_encode(['error' => "Stock insuficiente para '{$product['name']}'. Disponible: {$product['quantity']}, Solicitado: {$qty}"]);
              exit;
         }
+
+        $saleType  = $item->saleType ?? 'retail';
+        if ($saleType !== 'wholesale') {
+            $saleType = 'retail';
+        }
+        $unitPrice = ($saleType === 'wholesale')
+            ? (float)$product['wholesale_price']
+            : (float)$product['retail_price'];
+        $lineSubtotal = round($unitPrice * $qty, 2);
+        $computedSubtotal += $lineSubtotal;
+
+        $itemsToInsert[] = [
+            'ref'        => $ref,
+            'name'       => $item->productName ?? $product['name'],
+            'qty'        => $qty,
+            'unit_price' => $unitPrice,
+            'subtotal'   => $lineSubtotal,
+            'type'       => $saleType
+        ];
     }
+
+    $discount          = max(0, (float)($data->discount ?? 0));
+    $deliveryCost      = (float)($data->deliveryCost ?? 0);
+    $warrantyIncrement = (float)($data->warrantyIncrement ?? 0);
+    $total             = $computedSubtotal - $discount + $deliveryCost + $warrantyIncrement;
 
     try {
         $conn->beginTransaction();
@@ -198,10 +235,10 @@ if ($method === 'GET') {
             ':email'    => $data->customerInfo->email ?? '',
             ':addr'     => $data->customerInfo->address,
             ':city'     => $data->customerInfo->city,
-            ':total'    => $data->total,
-            ':disc'     => $data->discount ?? 0,
-            ':del'      => $data->deliveryCost ?? 0,
-            ':war'      => $data->warrantyIncrement ?? 0,
+            ':total'    => $total,
+            ':disc'     => $discount,
+            ':del'      => $deliveryCost,
+            ':war'      => $warrantyIncrement,
             ':pay'      => $data->paymentMethod,
             ':del_type' => $data->deliveryType,
             ':sale_date'=> $saleDate,
@@ -219,21 +256,21 @@ if ($method === 'GET') {
         $itemStmt  = $conn->prepare($itemSql);
         $stockStmt = $conn->prepare($stockSql);
 
-        foreach ($data->products as $item) {
+        foreach ($itemsToInsert as $item) {
             $itemStmt->execute([
                 ':sid'   => $saleId,
-                ':ref'   => $item->productId,
-                ':pname' => $item->productName,
-                ':qty'   => $item->quantity,
-                ':price' => $item->unitPrice,
-                ':sub'   => $item->subtotal,
-                ':type'  => $item->saleType ?? 'retail'
+                ':ref'   => $item['ref'],
+                ':pname' => $item['name'],
+                ':qty'   => $item['qty'],
+                ':price' => $item['unit_price'],
+                ':sub'   => $item['subtotal'],
+                ':type'  => $item['type'] ?? 'retail'
             ]);
 
             // Descontar inventario
             $stockStmt->execute([
-                ':qty' => $item->quantity,
-                ':ref' => $item->productId
+                ':qty' => $item['qty'],
+                ':ref' => $item['ref']
             ]);
         }
 
@@ -290,7 +327,10 @@ if ($method === 'GET') {
             ]);
         }
 
-        // Eliminar venta
+        // Eliminar items y cabecera de venta
+        $deleteItems = $conn->prepare("DELETE FROM sale_items WHERE sale_id = :id");
+        $deleteItems->execute([':id' => $dbId]);
+
         $deleteStmt = $conn->prepare("DELETE FROM sales WHERE id = :id");
         $deleteStmt->execute([':id' => $dbId]);
 
