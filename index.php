@@ -4938,15 +4938,49 @@
                     <div class="history-card-date"><span>${currentMonth === -1 ? 'Año ' + currentYear : new Date(currentYear, currentMonth).toLocaleDateString(undefined, {month:'short', year:'numeric'})}</span></div>
                 </div>
             `;
-            wholesaleCard.addEventListener('click', () => showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfitGross, sales, expenses, otherSales, otherCOGS, otherProfit));
-            cardsContainer.appendChild(wholesaleCard);
+              wholesaleCard.addEventListener('click', () => showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfitGross, sales, expenses, otherSales, otherCOGS, otherProfit));
+              cardsContainer.appendChild(wholesaleCard);
 
-            // 3. TARJETA GANANCIA TOTAL
-            const totalCard = document.createElement('div');
-            totalCard.className = 'history-card';
-            totalCard.innerHTML = `
-                <div class="history-card-header">
-                    <div class="history-card-icon profit">
+              // 3. TARJETA GANANCIA OTROS
+              const otherCard = document.createElement('div');
+              otherCard.className = 'history-card';
+              otherCard.innerHTML = `
+                  <div class="history-card-header">
+                      <div class="history-card-icon" style="background: #f3e5f5; color: #9C27B0;">
+                          <i class="fas fa-random"></i>
+                      </div>
+                      <div class="history-card-title">Ganancias Otros</div>
+                  </div>
+                  <div class="history-card-count">${otherCount} ventas</div>
+                  <div class="history-card-details">
+                      <div class="history-card-detail">
+                          <span>Total Ventas:</span>
+                          <span class="history-card-detail-value">${formatCurrency(otherSales)}</span>
+                      </div>
+                      <div class="history-card-detail">
+                          <span>Costo Inv:</span>
+                          <span class="history-card-detail-value">${formatCurrency(otherCOGS)}</span>
+                      </div>
+                      <div class="history-card-detail" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 5px;">
+                          <span style="font-weight: bold;">GANANCIA:</span>
+                          <span class="history-card-detail-value" style="color: #9C27B0; font-weight: bold;">${formatCurrency(otherProfit)}</span>
+                      </div>
+                  </div>
+                  <div class="history-card-footer">
+                      <div class="history-card-user"><i class="fas fa-magic"></i> <span>Ventas con precio libre</span></div>
+                      <div class="history-card-date"><span>Hoy ${new Date().toLocaleDateString()}</span></div>
+                      <div class="history-card-date"><span>${currentMonth === -1 ? 'Año ' + currentYear : new Date(currentYear, currentMonth).toLocaleDateString(undefined, {month:'short', year:'numeric'})}</span></div>
+                  </div>
+              `;
+              otherCard.addEventListener('click', () => showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfitGross, sales, expenses, otherSales, otherCOGS, otherProfit));
+              cardsContainer.appendChild(otherCard);
+
+              // 4. TARJETA GANANCIA TOTAL
+              const totalCard = document.createElement('div');
+              totalCard.className = 'history-card';
+              totalCard.innerHTML = `
+                  <div class="history-card-header">
+                      <div class="history-card-icon profit">
                         <i class="fas fa-coins"></i>
                     </div>
                     <div class="history-card-title">Ganancia Total</div>
