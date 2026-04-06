@@ -78,6 +78,18 @@ if ($method === 'GET') {
             $sale['deliveryCost'] = (float)($sale['delivery_cost'] ?? 0);
             $sale['warrantyIncrement'] = (float)($sale['warranty_increment'] ?? 0);
             $sale['user'] = $sale['username'];
+
+            // Determinar tipo de venta
+            $types = array_map(function($it) { return $it['saleType']; }, $sale['products']);
+            $uniqueTypes = array_unique($types);
+            $computedType = 'retail';
+            if (count($uniqueTypes) > 1) {
+                $computedType = 'mixed';
+            } elseif (!empty($uniqueTypes)) {
+                $computedType = reset($uniqueTypes);
+            }
+            $dbType = strtolower($sale['sale_type'] ?? '');
+            $sale['saleType'] = in_array($dbType, ['retail','wholesale','other','mixed']) ? $dbType : $computedType;
         }
         
         echo json_encode($pending);
@@ -110,9 +122,23 @@ if ($method === 'GET') {
             $conn->beginTransaction();
             
              // 1. Crear cabecera
-            $sql = "INSERT INTO sales (invoice_number, customer_name, customer_id, customer_phone, customer_email, customer_address, customer_city, total, discount, delivery_cost, warranty_increment, payment_method, delivery_type, sale_date, user_id, username, status) 
-            VALUES (:inv, :name, :cid, :phone, :email, :addr, :city, :total, :disc, :del, :war, :pay, :del_type, :sale_date, :uid, :uname, 'pending')";
+            $sql = "INSERT INTO sales (invoice_number, customer_name, customer_id, customer_phone, customer_email, customer_address, customer_city, total, discount, delivery_cost, warranty_increment, payment_method, delivery_type, sale_type, sale_date, user_id, username, status) 
+            VALUES (:inv, :name, :cid, :phone, :email, :addr, :city, :total, :disc, :del, :war, :pay, :del_type, :sale_type, :sale_date, :uid, :uname, 'pending')";
     
+            // Determinar tipo cabecera
+            $itemTypes = [];
+            foreach ($data->products as $it) {
+                $raw = strtolower($it->saleType ?? 'retail');
+                $itemTypes[] = in_array($raw, ['retail','wholesale','other']) ? $raw : 'retail';
+            }
+            $uniqueTypes = array_unique($itemTypes);
+            $headerType = 'retail';
+            if (count($uniqueTypes) > 1) {
+                $headerType = 'mixed';
+            } elseif (!empty($uniqueTypes)) {
+                $headerType = reset($uniqueTypes);
+            }
+
             $stmt = $conn->prepare($sql);
             $incomingDate = $data->date ?? null;
             $saleDate = $incomingDate ? ((strlen($incomingDate) === 10) ? ($incomingDate . ' ' . date('H:i:s')) : $incomingDate) : date('Y-m-d H:i:s');
@@ -131,6 +157,7 @@ if ($method === 'GET') {
                 ':war' => $data->warrantyIncrement ?? 0,
                 ':pay' => $data->paymentMethod,
                 ':del_type' => $data->deliveryType,
+                ':sale_type' => $headerType,
                 ':sale_date' => $saleDate,
                 ':uid' => $actorUserId,
                 ':uname' => $actorUser

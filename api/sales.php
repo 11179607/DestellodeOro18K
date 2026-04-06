@@ -112,18 +112,25 @@ if ($method === 'GET') {
                 } else {
                     $sale['total'] = (float)$sale['total'];
                 }
-                // Determinar tipo de venta (retail, wholesale o mixed)
+                // Determinar tipo de venta (retail, wholesale, other o mixed)
                 $types = [];
                 foreach ($sale['products'] as $p) {
                     $types[] = $p['saleType'];
                 }
                 $uniqueTypes = array_unique($types);
+                $computedType = 'retail';
                 if (count($uniqueTypes) > 1) {
-                    $sale['saleType'] = 'mixed';
+                    $computedType = 'mixed';
                 } elseif (!empty($uniqueTypes)) {
-                    $sale['saleType'] = reset($uniqueTypes);
+                    $computedType = reset($uniqueTypes);
+                }
+
+                // Preferir el valor guardado en BD si existe y es válido
+                $dbType = strtolower($sale['sale_type'] ?? '');
+                if (in_array($dbType, ['retail', 'wholesale', 'other', 'mixed'])) {
+                    $sale['saleType'] = $dbType;
                 } else {
-                    $sale['saleType'] = 'retail';
+                    $sale['saleType'] = $computedType;
                 }
             }
 
@@ -215,8 +222,8 @@ if ($method === 'GET') {
         $conn->beginTransaction();
 
         // 1. Crear cabecera de venta
-        $sql = "INSERT INTO sales (invoice_number, customer_name, customer_id, customer_phone, customer_email, customer_address, customer_city, total, discount, delivery_cost, warranty_increment, payment_method, delivery_type, sale_date, user_id, username, status)
-                VALUES (:inv, :name, :cid, :phone, :email, :addr, :city, :total, :disc, :del, :war, :pay, :del_type, :sale_date, :uid, :uname, :status)";
+        $sql = "INSERT INTO sales (invoice_number, customer_name, customer_id, customer_phone, customer_email, customer_address, customer_city, total, discount, delivery_cost, warranty_increment, payment_method, delivery_type, sale_type, sale_date, user_id, username, status)
+                VALUES (:inv, :name, :cid, :phone, :email, :addr, :city, :total, :disc, :del, :war, :pay, :del_type, :sale_type, :sale_date, :uid, :uname, :status)";
 
         // Verificar si el ID de factura ya existe
         $invoiceNumber = $data->id;
@@ -239,6 +246,16 @@ if ($method === 'GET') {
             $saleDate = date('Y-m-d H:i:s');
         }
 
+        // Determinar tipo de venta a nivel cabecera
+        $headerType = 'retail';
+        $itemTypes = array_column($itemsToInsert, 'type');
+        $uniqueItemTypes = array_unique($itemTypes);
+        if (count($uniqueItemTypes) > 1) {
+            $headerType = 'mixed';
+        } elseif (!empty($uniqueItemTypes)) {
+            $headerType = reset($uniqueItemTypes);
+        }
+
         $stmt = $conn->prepare($sql);
         $stmt->execute([
             ':inv'      => $invoiceNumber,
@@ -254,6 +271,7 @@ if ($method === 'GET') {
             ':war'      => $warrantyIncrement,
             ':pay'      => $data->paymentMethod,
             ':del_type' => $data->deliveryType,
+            ':sale_type'=> $headerType,
             ':sale_date'=> $saleDate,
             ':uid'      => $actorUserId,
             ':uname'    => $actorUser,
@@ -407,6 +425,10 @@ if ($method === 'GET') {
         $deliveryCost      = isset($data->deliveryCost)      ? (float)$data->deliveryCost      : (float)$sale['delivery_cost'];
         $discount          = isset($data->discount)          ? (float)$data->discount          : (float)$sale['discount'];
         $warrantyIncrement = isset($data->warrantyIncrement) ? (float)$data->warrantyIncrement : (float)($sale['warranty_increment'] ?? 0);
+        $saleTypeHeader    = isset($data->saleType) ? strtolower($data->saleType) : ($sale['sale_type'] ?? null);
+        if (!in_array($saleTypeHeader, ['retail','wholesale','other','mixed'])) {
+            $saleTypeHeader = $sale['sale_type'] ?? 'retail';
+        }
 
         $currentSubtotal  = (float)$sale['total'] - (float)$sale['delivery_cost'] + (float)$sale['discount'] - (float)($sale['warranty_increment'] ?? 0);
         $incomingSubtotal = isset($data->subtotal) ? (float)$data->subtotal : $currentSubtotal;
@@ -424,6 +446,7 @@ if ($method === 'GET') {
                 customer_address   = :addr,
                 customer_city      = :city,
                 payment_method     = :pay,
+                sale_type          = :sale_type,
                 status             = :status,
                 delivery_cost      = :del,
                 warranty_increment = :war,
@@ -442,6 +465,7 @@ if ($method === 'GET') {
             ':addr'  => $customerAddress,
             ':city'  => $customerCity,
             ':pay'   => $paymentMethod,
+            ':sale_type' => $saleTypeHeader,
             ':status'=> $newStatus,
             ':del'   => $deliveryCost,
             ':war'   => $warrantyIncrement,
