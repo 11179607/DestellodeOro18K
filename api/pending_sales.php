@@ -49,10 +49,18 @@ if ($method === 'GET') {
         
         // Para cada venta, obtener breve info de productos para mostrar en tabla
         foreach ($pending as &$sale) {
-            $itemStmt = $conn->prepare("SELECT product_name, quantity FROM sale_items WHERE sale_id = :id");
+            $itemStmt = $conn->prepare("SELECT product_name, quantity, sale_type, unit_price, subtotal FROM sale_items WHERE sale_id = :id");
             $itemStmt->execute([':id' => $sale['id']]);
             $items = $itemStmt->fetchAll();
-            $sale['products'] = $items; 
+            $sale['products'] = array_map(function($it) {
+                return [
+                    'productName' => $it['product_name'],
+                    'quantity'    => (int)$it['quantity'],
+                    'saleType'    => $it['sale_type'] ?? 'retail',
+                    'unitPrice'   => (float)($it['unit_price'] ?? 0),
+                    'subtotal'    => (float)($it['subtotal'] ?? 0),
+                ];
+            }, $items); 
             // Formato JS esperado: array de {productName: '...', ...}
             
             // Map database fields to JS expected fields
@@ -138,17 +146,22 @@ if ($method === 'GET') {
             $stockStmt = $conn->prepare($stockSql);
             
             foreach ($data->products as $item) {
+                $qty = (int)($item->count ?? $item->quantity ?? 0);
+                $unitPrice = isset($item->price) ? $item->price : (isset($item->unitPrice) ? $item->unitPrice : (isset($item->unit_price) ? $item->unit_price : 0));
+                $unitPrice = (float)$unitPrice;
+                $lineSubtotal = isset($item->total) ? (float)$item->total : ($unitPrice * $qty);
+                
                 $itemStmt->execute([
                     ':sid' => $saleId,
                     ':ref' => $item->id,
                     ':pname' => $item->name ?? $item->productName,
-                    ':qty' => $item->count,
-                    ':price' => $item->price,
-                    ':sub' => $item->total,
+                    ':qty' => $qty,
+                    ':price' => $unitPrice,
+                    ':sub' => $lineSubtotal,
                     ':type' => $item->saleType ?? 'retail'
                 ]);
                 $stockStmt->execute([
-                    ':qty' => $item->count,
+                    ':qty' => $qty,
                     ':ref' => $item->id
                 ]);
             }

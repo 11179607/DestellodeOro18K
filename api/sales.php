@@ -177,13 +177,22 @@ if ($method === 'GET') {
              exit;
         }
 
-        $saleType  = $item->saleType ?? 'retail';
-        if ($saleType !== 'wholesale') {
-            $saleType = 'retail';
+        $saleTypeRaw = strtolower($item->saleType ?? 'retail');
+        $saleType = in_array($saleTypeRaw, ['retail', 'wholesale', 'other']) ? $saleTypeRaw : 'retail';
+
+        // Precio unitario: retail/wholesale desde catálogo, "other" desde frontend
+        if ($saleType === 'wholesale') {
+            $unitPrice = (float)$product['wholesale_price'];
+        } elseif ($saleType === 'other' && isset($item->unitPrice)) {
+            $unitPrice = max(0, (float)$item->unitPrice);
+        } else {
+            $unitPrice = (float)$product['retail_price'];
         }
-        $unitPrice = ($saleType === 'wholesale')
-            ? (float)$product['wholesale_price']
-            : (float)$product['retail_price'];
+
+        // Seguridad: evitar ceros/negativos
+        if ($unitPrice <= 0) {
+            $unitPrice = (float)$product['retail_price'];
+        }
         $lineSubtotal = round($unitPrice * $qty, 2);
         $computedSubtotal += $lineSubtotal;
 

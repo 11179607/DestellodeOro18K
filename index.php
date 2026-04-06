@@ -2706,7 +2706,13 @@
                                 <select id="saleType" class="form-control" required>
                                     <option value="retail">Detal</option>
                                     <option value="wholesale">Mayorista</option>
+                                    <option value="other">Otro</option>
                                 </select>
+                            </div>
+                            <div class="form-group" id="customPriceGroup" style="display: none;">
+                                <label for="saleCustomPrice">Precio Personalizado *</label>
+                                <input type="number" id="saleCustomPrice" class="form-control numeric-decimal" min="0" step="0.01" placeholder="Ej: 123000">
+                                <small class="form-text" style="font-size: 0.8rem;">Solo se usa cuando eliges “Otro”.</small>
                             </div>
                             <div class="form-group">
                                 <label for="discount">Descuento (%)</label>
@@ -4157,11 +4163,16 @@
             // Agregar productos al carrito
             shoppingCart.forEach((item, index) => {
                 const row = document.createElement('tr');
+                const typeLabel = getSaleTypeLabel(item.saleType);
+                const typeColor = getSaleTypeColor(item.saleType);
 
                 row.innerHTML = `
                     <td>
                         <strong>${escapeHtml(item.productName)}</strong><br>
-                        <small style="color: #666;">Ref: ${escapeHtml(item.productId)}</small>
+                        <small style="color: #666;">Ref: ${escapeHtml(item.productId)}</small><br>
+                        <span style="display:inline-block;margin-top:4px;padding:3px 8px;border-radius:12px;font-size:0.75rem;background:${typeColor};color:#fff;border:1px solid #ddd;">
+                            ${typeLabel}
+                        </span>
                     </td>
                     <td>${escapeHtml(item.quantity)}</td>
                     <td>${escapeHtml(formatCurrency(item.unitPrice))}</td>
@@ -4179,6 +4190,19 @@
             // Actualizar total del carrito
             const cartTotalAmount = shoppingCart.reduce((sum, item) => sum + item.subtotal, 0);
             document.getElementById('cartTotalAmount').textContent = formatCurrency(cartTotalAmount);
+        }
+
+        // Mostrar/ocultar campo de precio personalizado
+        function toggleCustomPriceField() {
+            const saleTypeEl = document.getElementById('saleType');
+            const customGroup = document.getElementById('customPriceGroup');
+            const customInput = document.getElementById('saleCustomPrice');
+            if (!saleTypeEl || !customGroup || !customInput) return;
+            const isOther = saleTypeEl.value === 'other';
+            customGroup.style.display = isOther ? '' : 'none';
+            if (!isOther) {
+                customInput.value = '';
+            }
         }
 
         // Agregar producto al carrito
@@ -4204,7 +4228,15 @@
             const rawWholesale = product.wholesalePrice;
             const retailPrice = Number(rawRetail) || parseFloat(rawRetail) || parseMoney(rawRetail);
             const wholesalePrice = Number(rawWholesale) || parseFloat(rawWholesale) || parseMoney(rawWholesale);
-            const unitPrice = saleType === 'retail' ? retailPrice : wholesalePrice;
+            let unitPrice = saleType === 'retail' ? retailPrice : wholesalePrice;
+            if (saleType === 'other') {
+                const customInput = document.getElementById('saleCustomPrice');
+                unitPrice = parseMoney(customInput?.value) || 0;
+                if (unitPrice <= 0) {
+                    showDialog('Precio faltante', 'Ingresa un precio personalizado mayor a 0 para “Otro”.', 'warning');
+                    return;
+                }
+            }
             const subtotal = unitPrice * quantity;
             const discountAmount = subtotal * (discount / 100);
             const finalSubtotal = subtotal - discountAmount;
@@ -4235,6 +4267,7 @@
             // Limpiar formulario de producto
             document.getElementById('addProductToSaleForm').reset();
             document.getElementById('productInfo').textContent = '';
+            toggleCustomPriceField();
         };
 
         // Remover producto del carrito
@@ -4306,6 +4339,9 @@
             const manualDateValue = manualDateField && manualDateField.value ? manualDateField.value : null;
             const saleDate = manualDateValue || new Date().toISOString();
 
+            const uniqueSaleTypes = [...new Set(shoppingCart.map(i => i.saleType || 'retail'))];
+            const saleLevelType = uniqueSaleTypes.length === 1 ? uniqueSaleTypes[0] : 'mixed';
+
             // Crear objeto de venta con múltiples productos
             const sale = {
                 id: invoiceId,
@@ -4332,7 +4368,7 @@
                 status: paymentMethod === 'cash' ? 'completed' : 'pending',
                 confirmed: paymentMethod === 'cash',
                 user: currentUser.username,
-                saleType: shoppingCart[0]?.saleType || 'retail', // Guardar tipo de venta (detal/mayorista)
+                saleType: saleLevelType, // Guardar tipo de venta (detal/mayorista/otro/mixto)
                 warrantyIncrement: 0 // Inicializar en 0
             };
 
@@ -5117,7 +5153,9 @@
                 const saleTotal = (parseFloat(sale.total) || 0);
                 const profit = saleTotal - saleCOGS;
                 const isMixed = sale.saleType === 'mixed';
-                const isRetail = sale.saleType === 'retail' || (!isMixed && sale.saleType !== 'wholesale');
+                const isWholesale = sale.saleType === 'wholesale';
+                const isOther = sale.saleType === 'other';
+                const isRetail = sale.saleType === 'retail' || (!isMixed && !isWholesale && !isOther);
                 
                 let typeLabel = '';
                 let typeColor = '';
@@ -5126,8 +5164,16 @@
                     typeLabel = 'Mixto';
                     typeColor = 'linear-gradient(135deg, #4CAF50 0%, #2196F3 100%)';
                 } else {
-                    typeLabel = isRetail ? 'Al Detal' : 'Mayorista';
-                    typeColor = isRetail ? '#4CAF50' : '#2196F3';
+                    if (isWholesale) {
+                        typeLabel = 'Mayorista';
+                        typeColor = '#2196F3';
+                    } else if (isOther) {
+                        typeLabel = 'Otro';
+                        typeColor = '#9C27B0';
+                    } else {
+                        typeLabel = 'Al Detal';
+                        typeColor = '#4CAF50';
+                    }
                 }
 
                 return `
@@ -5141,8 +5187,8 @@
                                                     ${isMixed && sale.products ? `
                                                         <div style="font-size: 0.7em; display: flex; gap: 4px; flex-wrap: wrap;">
                                                             ${sale.products.map(p => `
-                                                                <span style="color: ${p.saleType === 'wholesale' ? '#2196F3' : '#4CAF50'}; font-weight: bold;">
-                                                                    ${p.saleType === 'wholesale' ? 'May' : 'Det'}
+                                                                <span style="color: ${p.saleType === 'wholesale' ? '#2196F3' : (p.saleType === 'other' ? '#9C27B0' : '#4CAF50')}; font-weight: bold;">
+                                                                    ${p.saleType === 'wholesale' ? 'May' : (p.saleType === 'other' ? 'Otro' : 'Det')}
                                                                 </span>
                                                             `).join('')}
                                                         </div>
@@ -5672,15 +5718,16 @@
                                         <div style="font-size: 0.9em; text-align: center;">
                                             ${item.saleType === 'mixed' ? 
                                                 '<span class="badge" style="background: linear-gradient(135deg, #4CAF50 0%, #2196F3 100%); color: white;">Mixto</span>' :
-                                                `<span class="badge ${item.saleType === 'wholesale' ? 'badge-info' : 'badge-success'}">
-                                                    ${item.saleType === 'wholesale' ? 'Mayorista' : 'Detal'}
+                                                `<span class="badge" style="background:${getSaleTypeColor(item.saleType)};color:${item.saleType==='other'?'#fff':'white'}">
+                                                    ${getSaleTypeLabel(item.saleType)}
                                                 </span>`
                                             }
                                             ${item.saleType === 'mixed' && item.products ? 
                                                 `<div style="font-size: 0.8em; margin-top: 2px;">` + 
                                                 item.products.map(p => {
-                                                    const isWho = (p.saleType === 'wholesale');
-                                                    return `<div style="color: ${isWho ? 'var(--info)' : 'var(--success)'};">${isWho ? 'May' : 'Det'}</div>`;
+                                                    const typeColor = getSaleTypeColor(p.saleType);
+                                                    const shortLabel = getSaleTypeShort(p.saleType);
+                                                    return `<div style="color: ${typeColor.includes('#') ? typeColor : '#444'};">${shortLabel}</div>`;
                                                 }).join('') + 
                                                 `</div>` 
                                                 : ''}
@@ -6146,7 +6193,7 @@
                     ? `<div style="display:flex;flex-direction:column;gap:2px;">
                             <span class="badge" style="background: linear-gradient(135deg, #4CAF50 0%, #2196F3 100%); color: white; padding: 2px 8px;">Mixto</span>
                             <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                                ${(sale.products || []).map(p => `<span style="font-size:0.65em;color:${p.saleType === 'wholesale' ? '#2196F3' : '#4CAF50'};font-weight:bold;">${p.saleType === 'wholesale' ? 'May' : 'Det'}</span>`).join('')}
+                                ${(sale.products || []).map(p => `<span style="font-size:0.65em;color:${p.saleType === 'wholesale' ? '#2196F3' : (p.saleType === 'other' ? '#9C27B0' : '#4CAF50')};font-weight:bold;">${p.saleType === 'wholesale' ? 'May' : (p.saleType === 'other' ? 'Otro' : 'Det')}</span>`).join('')}
                             </div>
                        </div>`
                     : `<span class="badge" style="background: ${isRetail ? '#4CAF50' : '#2196F3'}; color: white;">${isRetail ? 'Detal' : 'Mayorista'}</span>`;
@@ -7669,8 +7716,8 @@
                         (movement.productName || 'Producto');
                     
                     const isMixedSale = movement.saleType === 'mixed';
-                    const saleTypeLabel = isMixedSale ? 'Mixto' : (movement.saleType === 'wholesale' ? 'Mayorista' : 'Detal');
-                    const saleTypeColor = isMixedSale ? 'linear-gradient(135deg, #4CAF50 0%, #2196F3 100%)' : (movement.saleType === 'wholesale' ? '#2196F3' : '#4CAF50');
+                    const saleTypeLabel = getSaleTypeLabel(movement.saleType);
+                    const saleTypeColor = getSaleTypeColor(movement.saleType);
 
                     content = `
                         <div style="margin-bottom: 1.5rem;">
@@ -7710,8 +7757,8 @@
                                                 <td style="padding: 5px; text-align: center;">${p.quantity}</td>
                                                 <td style="padding: 5px; text-align: right;">${formatCurrency(p.unitPrice || p.unit_price || 0)}</td>
                                                 <td style="padding: 5px; text-align: center;">
-                                                    <span class="badge ${p.saleType === 'wholesale' ? 'badge-info' : 'badge-success'}" style="font-size: 0.7em;">
-                                                        ${p.saleType === 'wholesale' ? 'May' : 'Det'}
+                                                    <span class="badge" style="font-size: 0.7em; background:${getSaleTypeColor(p.saleType)}; color:#fff;">
+                                                        ${getSaleTypeShort(p.saleType)}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -7721,8 +7768,8 @@
                                                 <td style="padding: 5px; text-align: center;">${movement.quantity || 1}</td>
                                                 <td style="padding: 5px; text-align: right;">${formatCurrency(movement.unitPrice || 0)}</td>
                                                 <td style="padding: 5px; text-align: center;">
-                                                    <span class="badge ${movement.saleType === 'wholesale' ? 'badge-info' : 'badge-success'}" style="font-size: 0.7em;">
-                                                        ${movement.saleType === 'wholesale' ? 'May' : 'Det'}
+                                                    <span class="badge" style="font-size: 0.7em; background:${saleTypeColor}; color:${saleTypeColor.includes('#') ? '#fff' : '#fff'};">
+                                                        ${getSaleTypeShort(movement.saleType)}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -9339,14 +9386,35 @@
                 const discount = parsePercentage(discountInput.value);
                 discountInput.value = discount.toLocaleString('es-CO', { useGrouping: false, maximumFractionDigits: 2 });
 
-                // Validar datos
-                if (!productRef || quantity <= 0) {
-                    showDialog('Error', 'Por favor ingrese datos válidos.', 'error');
-                    return;
-                }
-                // Agregar al carrito
-                addToCart(productRef, quantity, saleType, discount);
-            });
+            // Validar datos
+            if (!productRef || quantity <= 0) {
+                showDialog('Error', 'Por favor ingrese datos válidos.', 'error');
+                return;
+            }
+            // Agregar al carrito
+            addToCart(productRef, quantity, saleType, discount);
+        });
+            
+            // Toggle de precio personalizado según tipo de venta
+            const saleTypeSelect = document.getElementById('saleType');
+            if (saleTypeSelect) {
+                toggleCustomPriceField();
+                saleTypeSelect.addEventListener('change', () => {
+                    toggleCustomPriceField();
+                    // Si hay producto cargado, sugerir precio detal como base
+                    if (saleTypeSelect.value === 'other') {
+                        const productRef = document.getElementById('saleProductRef').value.trim().toUpperCase();
+                        if (productRef) {
+                            const products = JSON.parse(localStorage.getItem('destelloOroProducts') || '[]');
+                            const product = products.find(p => p.id == productRef);
+                            if (product) {
+                                const customInput = document.getElementById('saleCustomPrice');
+                                if (customInput) customInput.value = Number(product.retailPrice) || product.retailPrice || '';
+                            }
+                        }
+                    }
+                });
+            }
 
             // Buscar producto al escribir referencia (venta)
             document.getElementById('saleProductRef').addEventListener('input', function () {
@@ -9362,6 +9430,11 @@
                             `<strong>${product.name}</strong><br>
                              💰 Detal: ${retailPrice} | 📦 Mayorista: ${wholesalePrice}<br>
                              📊 Stock disponible: ${product.quantity} unidades`;
+                        const saleTypeEl = document.getElementById('saleType');
+                        if (saleTypeEl?.value === 'other') {
+                            const customInput = document.getElementById('saleCustomPrice');
+                            if (customInput) customInput.value = Number(product.retailPrice) || product.retailPrice || '';
+                        }
                     } else {
                         document.getElementById('productInfo').innerHTML = '<span style="color: var(--danger);">❌ Producto no encontrado</span>';
                     }
@@ -11540,6 +11613,34 @@
 
         function getPaymentMethodName(method) {
             return paymentMethods[method]?.name || method;
+        }
+        
+        // Helpers de tipo de venta
+        function getSaleTypeLabel(type) {
+            switch (type) {
+                case 'wholesale': return 'Mayorista';
+                case 'other': return 'Otro';
+                case 'mixed': return 'Mixto';
+                default: return 'Detal';
+            }
+        }
+        
+        function getSaleTypeShort(type) {
+            switch (type) {
+                case 'wholesale': return 'May';
+                case 'other': return 'Otro';
+                case 'mixed': return 'Mix';
+                default: return 'Det';
+            }
+        }
+        
+        function getSaleTypeColor(type) {
+            switch (type) {
+                case 'wholesale': return '#2196F3';
+                case 'other': return '#9C27B0';
+                case 'mixed': return 'linear-gradient(135deg, #4CAF50 0%, #2196F3 100%)';
+                default: return '#4CAF50';
+            }
         }
 
         // Función para limpiar datos corruptos y resetear contraseñas (RESTAURADO)
