@@ -4780,6 +4780,24 @@
                     saleWholesaleTotal += (adjustments * wholesaleRatio);
                 }
 
+                // Si el total guardado en cabecera difiere de lo calculado por items, ajustar
+                const declaredTotal = parseFloat(sale.total);
+                const computedTotal = saleRetailTotal + saleWholesaleTotal;
+                if (!isNaN(declaredTotal) && Math.abs(declaredTotal - computedTotal) > 0.01) {
+                    if (computedTotal > 0) {
+                        const factor = declaredTotal / computedTotal;
+                        saleRetailTotal *= factor;
+                        saleWholesaleTotal *= factor;
+                    } else {
+                        // Sin desgloses, asignar todo al canal predominante (retail por defecto)
+                        if (hasWholesaleItems && !hasRetailItems) {
+                            saleWholesaleTotal = declaredTotal;
+                        } else {
+                            saleRetailTotal = declaredTotal;
+                        }
+                    }
+                }
+
                 retailSales += saleRetailTotal;
                 wholesaleSales += saleWholesaleTotal;
                 retailCOGS += saleRetailCOGS;
