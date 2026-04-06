@@ -4756,18 +4756,24 @@
             // Calcular ganancias por tipo de venta
             let retailSales = 0;
             let wholesaleSales = 0;
+            let otherSales = 0;
             let retailCOGS = 0;
             let wholesaleCOGS = 0;
+            let otherCOGS = 0;
             let retailCount = 0;
             let wholesaleCount = 0;
+            let otherCount = 0;
 
             sales.forEach(sale => {
                 let saleRetailTotal = 0;
                 let saleWholesaleTotal = 0;
+                let saleOtherTotal = 0;
                 let saleRetailCOGS = 0;
                 let saleWholesaleCOGS = 0;
+                let saleOtherCOGS = 0;
                 let hasWholesaleItems = false;
                 let hasRetailItems = false;
+                let hasOtherItems = false;
                 let rawSubtotal = 0;
 
                 if (sale.products && Array.isArray(sale.products)) {
@@ -4781,6 +4787,10 @@
                             saleWholesaleTotal += subtotal;
                             saleWholesaleCOGS += cost;
                             hasWholesaleItems = true;
+                        } else if (type === 'other') {
+                            saleOtherTotal += subtotal;
+                            saleOtherCOGS += cost;
+                            hasOtherItems = true;
                         } else {
                             saleRetailTotal += subtotal;
                             saleRetailCOGS += cost;
@@ -4794,6 +4804,9 @@
                     if ((sale.saleType || sale.sale_type || 'retail') === 'wholesale') {
                         saleWholesaleTotal = total;
                         hasWholesaleItems = true;
+                    } else if ((sale.saleType || sale.sale_type) === 'other') {
+                        saleOtherTotal = total;
+                        hasOtherItems = true;
                     } else {
                         saleRetailTotal = total;
                         hasRetailItems = true;
@@ -4814,20 +4827,24 @@
                     
                     saleRetailTotal += (adjustments * retailRatio);
                     saleWholesaleTotal += (adjustments * wholesaleRatio);
+                    saleOtherTotal += (adjustments * (saleOtherTotal / rawSubtotal));
                 }
 
                 // Si el total guardado en cabecera difiere de lo calculado por items, ajustar
                 const declaredTotal = parseFloat(sale.total);
-                const computedTotal = saleRetailTotal + saleWholesaleTotal;
+                const computedTotal = saleRetailTotal + saleWholesaleTotal + saleOtherTotal;
                 if (!isNaN(declaredTotal) && Math.abs(declaredTotal - computedTotal) > 0.01) {
                     if (computedTotal > 0) {
                         const factor = declaredTotal / computedTotal;
                         saleRetailTotal *= factor;
                         saleWholesaleTotal *= factor;
+                        saleOtherTotal *= factor;
                     } else {
                         // Sin desgloses, asignar todo al canal predominante (retail por defecto)
                         if (hasWholesaleItems && !hasRetailItems) {
                             saleWholesaleTotal = declaredTotal;
+                        } else if (hasOtherItems && !hasRetailItems && !hasWholesaleItems) {
+                            saleOtherTotal = declaredTotal;
                         } else {
                             saleRetailTotal = declaredTotal;
                         }
@@ -4836,17 +4853,21 @@
 
                 retailSales += saleRetailTotal;
                 wholesaleSales += saleWholesaleTotal;
+                otherSales += saleOtherTotal;
                 retailCOGS += saleRetailCOGS;
                 wholesaleCOGS += saleWholesaleCOGS;
+                otherCOGS += saleOtherCOGS;
 
                 if (hasRetailItems) retailCount++;
                 if (hasWholesaleItems) wholesaleCount++;
+                if (hasOtherItems) otherCount++;
             });
 
             const retailProfit = retailSales - retailCOGS;
             const wholesaleProfit = wholesaleSales - wholesaleCOGS;
+            const otherProfit = otherSales - otherCOGS;
             const totalExpenses = expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
-            const totalProfitGross = retailProfit + wholesaleProfit;
+            const totalProfitGross = retailProfit + wholesaleProfit + otherProfit;
             const netProfit = totalProfitGross - totalExpenses;
 
             // 1. TARJETA GANANCIAS AL DETAL
@@ -4880,7 +4901,7 @@
                     <div class="history-card-date"><span>${currentMonth === -1 ? 'Año ' + currentYear : new Date(currentYear, currentMonth).toLocaleDateString(undefined, {month:'short', year:'numeric'})}</span></div>
                 </div>
             `;
-            retailCard.addEventListener('click', () => showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfitGross, sales, expenses));
+            retailCard.addEventListener('click', () => showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfitGross, sales, expenses, otherSales, otherCOGS, otherProfit));
             cardsContainer.appendChild(retailCard);
 
             // 2. TARJETA GANANCIAS MAYORISTA
@@ -4914,7 +4935,7 @@
                     <div class="history-card-date"><span>${currentMonth === -1 ? 'Año ' + currentYear : new Date(currentYear, currentMonth).toLocaleDateString(undefined, {month:'short', year:'numeric'})}</span></div>
                 </div>
             `;
-            wholesaleCard.addEventListener('click', () => showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfitGross, sales, expenses));
+            wholesaleCard.addEventListener('click', () => showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfitGross, sales, expenses, otherSales, otherCOGS, otherProfit));
             cardsContainer.appendChild(wholesaleCard);
 
             // 3. TARJETA GANANCIA TOTAL
@@ -4931,11 +4952,11 @@
                 <div class="history-card-details">
                     <div class="history-card-detail">
                         <span>Ventas Totales:</span>
-                        <span class="history-card-detail-value">${formatCurrency(retailSales + wholesaleSales)}</span>
+                        <span class="history-card-detail-value">${formatCurrency(retailSales + wholesaleSales + otherSales)}</span>
                     </div>
                     <div class="history-card-detail">
                         <span>Costo Total:</span>
-                        <span class="history-card-detail-value">${formatCurrency(retailCOGS + wholesaleCOGS)}</span>
+                        <span class="history-card-detail-value">${formatCurrency(retailCOGS + wholesaleCOGS + otherCOGS)}</span>
                     </div>
                     <div class="history-card-detail">
                         <span>Gastos:</span>
@@ -4952,7 +4973,7 @@
                     <div class="history-card-date"><span>Hoy ${new Date().toLocaleDateString()}</span></div>
                 </div>
             `;
-            totalCard.addEventListener('click', () => showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfitGross, sales, expenses));
+            totalCard.addEventListener('click', () => showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfitGross, sales, expenses, otherSales, otherCOGS, otherProfit));
             cardsContainer.appendChild(totalCard);
         }
 
@@ -5066,7 +5087,7 @@
         }
 
         // Mostrar detalles de ganancias
-        function showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfit, sales, expenses = []) {
+        function showProfitDetails(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfit, sales, expenses = [], otherSales = 0, otherCOGS = 0, otherProfit = 0) {
             // Ocultar tarjetas
             document.getElementById('historyCardsView').style.display = 'none';
             document.getElementById('historyDetailsView').style.display = 'block';
@@ -5075,7 +5096,7 @@
             const dateStr = currentMonth === -1 ? `Año ${currentYear}` : new Date(currentYear, currentMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
             const title = `Análisis de Ganancias - ${dateStr}`;
 
-            const detailsHTML = generateProfitBreakdownHTML(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfit, sales, expenses);
+            const detailsHTML = generateProfitBreakdownHTML(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfit, sales, expenses, otherSales, otherCOGS, otherProfit);
 
             content.innerHTML = `
                 <div class="dialog-icon" style="color: var(--gold-primary);">
@@ -5090,11 +5111,13 @@
         }
 
         // Generar HTML del desglose de ganancias
-        function generateProfitBreakdownHTML(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfit, sales, expenses = []) {
+        function generateProfitBreakdownHTML(retailSales, wholesaleSales, retailCOGS, wholesaleCOGS, retailProfit, wholesaleProfit, totalProfit, sales, expenses = [], otherSales = 0, otherCOGS = 0, otherProfit = 0) {
             const totalExpenses = Array.isArray(expenses)
                 ? expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0)
                 : parseFloat(expenses) || 0;
             const netProfit = totalProfit - totalExpenses;
+            const grossSalesTotal = retailSales + wholesaleSales + otherSales;
+            const grossCostTotal  = retailCOGS + wholesaleCOGS + otherCOGS;
             return `
                 <div style="margin-bottom: 20px;">
                     <h3 style="color: var(--gold-dark); border-bottom: 2px solid var(--gold-primary); padding-bottom: 10px;">
@@ -5122,8 +5145,9 @@
                             <div style="font-size: 1.8em; color: var(--gold-primary); margin: 10px 0; font-weight: bold;">
                                 ${formatCurrency(netProfit)}
                             </div>
-                            <small>Ventas Brutas: ${formatCurrency(retailSales + wholesaleSales)}</small><br>
-                            <small>Total Costo: ${formatCurrency(retailCOGS + wholesaleCOGS)}</small><br>
+                            <small>Ventas Brutas: ${formatCurrency(grossSalesTotal)}</small><br>
+                            <small>Total Costo: ${formatCurrency(grossCostTotal)}</small><br>
+                            <small>Otros (incl.): Ventas ${formatCurrency(otherSales)} · Costo ${formatCurrency(otherCOGS)} · Ganancia ${formatCurrency(otherProfit)}</small><br>
                             <small>Ganancia Operativa: ${formatCurrency(totalProfit + totalExpenses)}</small><br>
                             <small style="color: var(--danger);">Gastos: -${formatCurrency(totalExpenses)}</small><br>
                         </div>
