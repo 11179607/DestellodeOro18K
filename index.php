@@ -4781,7 +4781,7 @@
                         const qty = parseInt(p.quantity) || 0;
                         const subtotal = parseFloat(p.subtotal) || 0;
                         const cost = (parseFloat(p.purchasePrice || p.purchase_price) || 0) * qty;
-                        const type = p.saleType || p.sale_type || 'retail';
+                        const type = p.saleType || p.sale_type || sale.saleType || sale.sale_type || 'retail';
 
                         if (type === 'wholesale') {
                             saleWholesaleTotal += subtotal;
@@ -4798,13 +4798,16 @@
                         }
                         rawSubtotal += subtotal;
                     });
-                } else {
-                    // Fallback si no vienen productos
+                }
+
+                // Fallback si no vienen productos o subtotal quedó en 0 (por datos incompletos)
+                if (rawSubtotal === 0) {
                     const total = parseFloat(sale.total) || 0;
-                    if ((sale.saleType || sale.sale_type || 'retail') === 'wholesale') {
+                    const declaredType = sale.saleType || sale.sale_type || 'retail';
+                    if (declaredType === 'wholesale') {
                         saleWholesaleTotal = total;
                         hasWholesaleItems = true;
-                    } else if ((sale.saleType || sale.sale_type) === 'other') {
+                    } else if (declaredType === 'other') {
                         saleOtherTotal = total;
                         hasOtherItems = true;
                     } else {
